@@ -35,7 +35,9 @@ function portrait(m) {
   const slug = portraitSlug(m);
   const initials = esc(m.short.split(/\s+/).map(part => part[0]).join('').slice(0,3));
   const fallback = '<span class="portrait" aria-hidden="true">'+initials+'</span>';
-  if (!portraits.includes(slug)) return fallback;
+  // Bodies without their own portrait (e.g. Rome's Consuls) reuse the six generic senator portraits in rotation.
+  if (!portraits.includes(slug)) { const i = Math.max(0, state().ministers.indexOf(m)) % portraits.length;
+    return fallback.replace('class="portrait"','class="portrait" hidden')+'<img alt="" class="portrait" src="./assets/ministers/'+portraits[i]+'.png">'; }
   return fallback.replace('class="portrait"','class="portrait" hidden')+
     '<img alt="" class="portrait" src="./assets/ministers/'+slug+'.png">';
 }
