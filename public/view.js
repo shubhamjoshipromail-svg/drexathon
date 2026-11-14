@@ -69,6 +69,7 @@ function showError(error) {
 function renderTurn() {
   if (!engine || $('chamber').hidden) return;
   const s = state(), q = s.openQuestion, el = $('turn');
+  if (!q && floorEvent?.kind === 'question') hideFloor(floorEvent);   // answered: the question pop-up closes
   const deliberating = busy && !$('division').hidden === false && $('live-status').textContent.includes('address');
   if (deliberating) { el.className = 'turn deliberating'; el.innerHTML = '<strong>The Senate deliberates</strong><span>'+s.ministers.length+' senators and '+s.members.length+' caucus members are deciding via Drex…</span>'; }
   else if (q) { el.className = 'turn question'; el.innerHTML = '<strong>'+esc(q.short)+' asks you</strong><span>“'+esc(q.text)+'”</span><em>Answer out loud (hold Space) or type below. The vote waits for your answer.</em>'; }
@@ -396,7 +397,7 @@ function bindEngine() {
   engine.on('drift',event => { renderDrift(event); renderCoach(); });
   engine.on('face',renderFace);
   engine.on('accepted', amendment => { $('subtitle').textContent = 'Amendment accepted · '+amendment.text; renderCoach(); });
-  engine.on('interrupt', playSpeech);
+  engine.on('interrupt', event => { showFloor(event); playSpeech(event); });
   engine.on('verdict',verdict => { renderCoach(); renderVerdict(verdict); });
   engine.on('oneLlm',renderOracle);
 }
@@ -583,6 +584,23 @@ function animateSpeech(audio, event) {
   return disconnect;
 }
 
+// A senator takes the floor: pop-up with their portrait addressing the Consul. Questions stay until answered;
+// speeches close when their voice ends (or after 10 s). Content is the engine's event (Drex chose it, LLM worded speeches).
+let floorEvent = null, floorTimer;
+function showFloor(event) {
+  if (!$('division').hidden || !event?.line) return;
+  const m = minister(event.minister) || state().ministers.find(x => x.short === event.short);
+  floorEvent = event; clearTimeout(floorTimer);
+  const q = event.kind === 'question';
+  $('floor-pop').className = 'floor-pop ' + (q ? 'question' : 'speech');
+  $('floor-pop').style.setProperty('--ministry', m ? color(m) : '#E2B764');
+  $('floor-pop').innerHTML = '<div class="floor-face">'+(m ? portrait(m) : '')+'</div><div class="floor-text"><p class="floor-who">'+esc((m && (m.veto ? 'Tribune of ' : 'Senator of ')) + (m ? m.short : event.short))+(q ? ' asks the Consul' : ' addresses the Consul')+'</p>'+
+    '<p class="floor-line">“'+esc(event.line)+'”</p>'+(q ? '<p class="floor-hint">Answer out loud (hold Space) or type below. The Senate waits for your answer.</p><button type="button" id="floor-answer">Answer</button>' : (event.cite ? '<p class="floor-hint">'+citeLabel(event.cite)+'</p>' : ''))+'</div>';
+  $('floor-pop').hidden = false;
+  $('floor-answer')?.addEventListener('click', () => { $('floor-pop').hidden = true; $('words').focus(); });
+  if (!q) floorTimer = setTimeout(() => hideFloor(event), 10000);
+}
+function hideFloor(event) { if (!event || floorEvent === event) { $('floor-pop').hidden = true; floorEvent = null; } }
 function playSpeech(event) {
   if (!event.line) return;
   speechQueue = speechQueue.then(async ()=>{
@@ -596,6 +614,7 @@ function playSpeech(event) {
     finally {
       dispose?.();
       currentAudio = null;
+      if (event.kind !== 'question') hideFloor(event);
       liveSpeech = null;
       cancelAnimationFrame(audioAnimation);
       $('chamber').style.removeProperty('--speech-lift');
