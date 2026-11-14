@@ -33,6 +33,18 @@ p { font-size: 32px; line-height: 1.4; color: #CDBFA8; }
 
 </section>
 
+<section id="chamber" class="alt" style="flex-direction:row; gap:56px; align-items:center;">
+<img class="shot" src="../experiments/chamber-screenshot.webp" alt="The Senate chamber: motion, senator cards, hemicycle of caucus seats and the Consul at the rostrum" style="width:1080px; height:520px; object-fit:contain; background:#0F0B08;">
+<div class="col" style="gap:28px;">
+<p class="eyebrow">THE CHAMBER</p>
+<h3>Watch it decide</h3>
+<p style="font-size:28px;">Seats recolour as 150 members re-decide. Senators cite their rules, ask you questions out loud and propose amendments.</p>
+<p style="font-size:28px;">A coach shows the path to passage: what you need, who blocks, who is persuadable.</p>
+<p style="font-size:28px;">Accept an amendment by voice and the bill rewrites itself.</p>
+</div>
+
+</section>
+
 <section id="problem" class="alt">
 <p class="eyebrow">THE PROBLEM</p>
 <h2>Big decisions get one voice</h2>
@@ -54,18 +66,6 @@ p { font-size: 32px; line-height: 1.4; color: #CDBFA8; }
 <div class="card rise" style="--i:3"><p class="step">4</p><p class="label">Code enforces powers</p><p class="body">Drex casts the votes. Weights, 2/3 rules, vetoes and override conditions are applied in code.</p></div>
 </div>
 <p class="small">The LLM only drafts the menu of amendments and questions at setup, and gives senators their spoken words. It decides nothing.</p>
-
-</section>
-
-<section id="chamber" class="alt" style="flex-direction:row; gap:56px; align-items:center;">
-<img class="shot" src="../experiments/chamber-screenshot.webp" alt="The Senate chamber: motion, senator cards, hemicycle of caucus seats and the Consul at the rostrum" style="width:1080px; height:520px; object-fit:contain; background:#0F0B08;">
-<div class="col" style="gap:28px;">
-<p class="eyebrow">THE CHAMBER</p>
-<h3>Watch it decide</h3>
-<p style="font-size:28px;">Seats recolour as 150 members re-decide. Senators cite their rules, ask you questions out loud and propose amendments.</p>
-<p style="font-size:28px;">A coach shows the path to passage: what you need, who blocks, who is persuadable.</p>
-<p style="font-size:28px;">Accept an amendment by voice and the bill rewrites itself.</p>
-</div>
 
 </section>
 
@@ -122,14 +122,14 @@ p { font-size: 32px; line-height: 1.4; color: #CDBFA8; }
 </section>
 
 <section id="stack" class="alt">
-<p class="eyebrow">STACK AND HONESTY</p>
-<h2>What runs where</h2>
+<p class="eyebrow">BUILT ON NACE</p>
+<h2>Drex makes every call. NDI reads every document.</h2>
 <div class="row" style="flex:1; align-items:stretch;">
-<div class="card"><p class="label">Nace</p><p class="body">Drex for every agent decision, Drex Max for the webcam, NDI for constitutions and evidence (PDF, typed text, web pages).</p></div>
-<div class="card"><p class="label">Partners</p><p class="body">DeepInfra (Qwen) drafts amendments and speaks for senators, OpenAI as backup. ElevenLabs v4 gives each senator a voice.</p></div>
-<div class="card"><p class="label">What is not live</p><p class="body">NDI reads are cached after the first live read, labelled on screen. Portraits were generated at build time.</p></div>
+<div class="card"><p class="big">1,313</p><p class="body">Drex questions answered in one short session: stances, citations, questions, amendments, allies, votes, veto scope, thresholds, motion gate.</p></div>
+<div class="card"><p class="big">4</p><p class="body">constitutions read by NDI with page citations (personal, Roman Republic, U.S., Japan), plus evidence from PDFs, typed text and web links.</p></div>
+<div class="card"><p class="big">0.3 s</p><p class="body">Drex Max reads the Consul’s face from the webcam on every sentence.</p></div>
 </div>
-<p class="small">Plain Node server and browser JavaScript. No framework, no database. Keys stay on the server.</p>
+<p class="small">Partners: DeepInfra (Qwen) drafts amendments and gives senators words, OpenAI as backup · ElevenLabs v4 voices · Plain Node + browser JS. NDI reads are cached after the first live read and labelled on screen; Drex, LLM and voice are live every time.</p>
 
 </section>
 
