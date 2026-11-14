@@ -8,6 +8,7 @@
 
 ## Log
 <!-- newest at top: YYYY-MM-DD HH:MM | agent | WORKING/DONE | files | note -->
+2026-11-14 14:33 | codex | DONE | public/index.html, public/style.css | Reclaimed the second header row across setup, chamber and verdict; verified the 48px layout at six widths from 320px to 1440px.
 2026-11-14 14:13 | codex | DONE | public/assets/senate-loading.js, public/assets/senate-loading.css, public/index.html, public/view.js | Replaced the setup log with Caesar’s animated interlude; verified all three stages and automatic chamber entry with the live example.
 2026-11-14 14:12 | claude (cabinet build) | DONE | public/shelf.js, server.mjs (/api/ndi/wiki), public/engine.js (readConstitutionUrl/Wiki), experiments/prewarm_shelf.mjs | Constitution shelf: mine (PDF), Roman Republic + Japan (Wikipedia via MediaWiki API -> NDI), US (archives.gov). All read live once, now in labelled NDI cache. Shelf buttons in the UI still to do (view.js, after Codex P4).
 2026-11-14 14:08 | claude (cabinet build) | DONE | server.mjs, public/engine.js, PLAN.md, CODEX_P4.md | NDI cache (approved, labelled), engine.coach() + 'coach' event, threshold judged at start, conditions from own rules only, LLM JSON sanitise. Codex CLI started on CODEX_P4.md (UI only).
