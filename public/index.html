@@ -10,46 +10,51 @@
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<header class="mast"><span class="mark" aria-hidden="true">S</span><h1>The Senate of You</h1><span id="ticker"></span></header>
+<header class="mast"><h1>The Senate of You</h1><span id="ticker"></span></header>
 <div id="errors" role="alert" hidden></div>
 <main id="setup">
 <form id="convene" class="setup-card">
-<p class="eyebrow">The Senate of You</p>
 <h2>Convene the Senate</h2>
 <label for="decision">What decision is before the Senate?</label>
 <textarea id="decision" rows="2" required placeholder="Should I quit my job to join Lumen Labs as founding engineer?"></textarea>
-<div class="setup-actions"><button type="button" id="sample">Use the example (constitution + offer letter PDFs)</button><span id="source-status"></span></div>
-<label for="const-text">Your constitution — edit the template (NDI reads it), or upload a PDF instead</label>
+<div class="setup-actions"><button type="button" id="sample">Use the example</button><span id="source-status"></span></div>
+<details class="documents"><summary>Customize the constitution and evidence</summary>
+<label for="const-text">Your constitution</label>
 <textarea id="const-text" rows="9" spellcheck="false"></textarea>
-<div class="files"><label>or Constitution PDF<input id="constitution" type="file" accept="application/pdf,.pdf"></label>
+<div class="files"><label>Upload a constitution PDF<input id="constitution" type="file" accept="application/pdf,.pdf"></label>
 <label>Evidence PDFs (optional)<input id="evidence" type="file" accept="application/pdf,.pdf" multiple></label></div>
-<label for="ev-urls">Evidence links (optional, one per line): job post, listing, article, public doc</label>
+<label for="ev-urls">Evidence links (one per line)</label>
 <textarea id="ev-urls" rows="2" placeholder="https://…"></textarea>
-<label for="ev-text">Evidence text (optional): paste an email, offer, message…</label>
+<label for="ev-text">Paste evidence</label>
 <textarea id="ev-text" rows="3"></textarea>
-<p class="meta">No evidence? Fine: the senators will ask you what they need to know.</p>
+
+</details>
 <button class="gold" id="convene-button">Convene the Senate</button>
 <div id="progress" aria-live="polite"></div><div id="rollcall"></div>
 </form>
 </main>
 <main id="chamber" hidden>
-<section class="motion"><div><p class="eyebrow">The Motion</p><h2 id="motion"></h2></div><div id="tally"></div></section>
+<section class="motion"><div><h2 id="motion"></h2></div><div id="tally"></div></section>
 <section class="floor">
 <div class="senators" id="left"></div>
 <div class="arena">
 <canvas id="seats" aria-label="Senate caucus seats by ministry and support"></canvas><div id="rim"></div>
 <div class="rostrum">
-<div class="oval"><span id="bust" aria-hidden="true">♜</span><video id="camera" muted autoplay playsinline hidden></video></div>
+<div class="caesar">
+<img class="caesar-rest" src="./assets/consul-body.png" alt="">
+<img class="caesar-address" src="./assets/consul-body-speaking.png" alt="">
+<div class="oval"><span id="bust" aria-hidden="true"></span><video id="camera" muted autoplay playsinline hidden></video></div>
+</div>
 <div class="consul"><strong>Consul</strong><button id="cam" type="button" aria-pressed="false">Camera off</button></div>
 <div id="face" aria-live="polite"></div>
-<div class="speak"><button id="mic" type="button" aria-pressed="false">Hold Space to speak</button><span>Reasons · Trades · Fears</span></div>
+<div class="speak"><button id="mic" type="button" aria-pressed="false">Hold Space to speak</button></div>
 <div id="subtitle" aria-live="polite"></div>
 <form id="address"><input id="words" aria-label="Address the Senate in writing" placeholder="Or address the Senate in writing…" required><button>Send</button></form>
 </div>
 </div>
 <div class="senators" id="right"></div>
 </section>
-<section class="ledger"><div><p class="eyebrow">Caucus support</p><div id="curve"></div></div>
+<section class="ledger"><div><h3 class="curve-label">Caucus support</h3><div id="curve"></div></div>
 <div class="commands"><span id="live-status" role="status"></span><button id="transcript">Transcript</button><button class="gold" id="vote">Divide the Senate</button></div></section>
 </main>
 <main id="division" hidden></main>

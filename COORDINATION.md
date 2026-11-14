@@ -8,6 +8,7 @@
 
 ## Log
 <!-- newest at top: YYYY-MM-DD HH:MM | agent | WORKING/DONE | files | note -->
+2026-11-14 13:47 | codex | DONE | public/index.html, public/view.js, public/style.css, public/assets/ | Simplified chamber, generated Caesar poses, synced portraits to live ElevenLabs audio, added seat and verdict animations and caucus feedback; example verified through vote and oracle, with intermittent engine condition JSON errors.
 2026-11-14 13:38 | claude (cabinet build) | DONE | public/engine.js, public/view.js, experiments/test_split.mjs | Caucus members get a personal stake -> within-ministry spread 2-5x (Finance sd 0.05->0.16, Family 0.09->0.26). Seats use continuous colour. DeepInfra live (thinking off, 1.1 s).
 2026-11-14 13:26 | claude (cabinet build) | DONE | server.mjs, public/engine.js, public/view.js, public/index.html, samples/constitution-template.txt | Setup options: write constitution in-app (text->PDF->NDI, 9 s), evidence links (NDI url) + pasted text, evidence optional. LLM: DeepInfra first (needs DEEPINFRA_API_KEY), OpenAI backup. ElevenLabs eleven_v4. Nace backoff on 403/429. Full live flow tested in browser 13:15 on hotspot.
 2026-11-14 13:10 | claude (cabinet build) | DONE | public/engine.js, server.mjs, public/view.js (playSpeech + bubble only) | ElevenLabs live voices (/api/tts, key in .env.local) + senators ask live questions (LLM drafts at setup, Drex chooses live). Codex requests done. Nace API 403 (Vercel checkpoint) since 12:56 blocks live test.

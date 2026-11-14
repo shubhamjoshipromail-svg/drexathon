@@ -17,7 +17,11 @@ let engine, samples = false, busy = false, stream, recognition, activeSpeech = f
 let pendingSpeech = '';
 const flashes = new Map();
 const previousSeats = new Map();
-let speechTimer, liveSpeech, seatPositions = [], animation, seatFocus = 0;
+let liveSpeech, seatPositions = [], animation, seatFocus = 0;
+let audioContext, currentAudio, audioAnimation;
+let speechQueue = Promise.resolve();
+let rippleStart = -Infinity;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const state = () => engine.state;
 const minister = id => state().ministers.find(m => m.id === id);
 const portraitSlug = m => m.short.toLowerCase().trim().replace(/\W+/g,'-');
@@ -156,7 +160,7 @@ $('convene').onsubmit = async event => {
       const badge = document.createElement('span');
       badge.className = 'entrance';
       badge.style.animationDelay = index*100+'ms';
-      badge.textContent = m.short+' · '+m.vote_weight+' votes'+(m.has_veto ? ' · veto' : '')+page(m.cite);
+      badge.textContent = m.short+' ('+m.vote_weight+(m.vote_weight===1?' vote':' votes')+(m.has_veto ? ', veto' : '')+')'+(m.cite?.page ? ', p. '+m.cite.page : '');
       $('rollcall').append(badge);
     }
     const opening = document.createElement('div');
@@ -179,9 +183,12 @@ $('convene').onsubmit = async event => {
 };
 
 function bindEngine() {
-  engine.on('drex', row => { $('ticker').textContent = 'Drex · '+row.n+' decisions · '+(row.ms/1000).toFixed(2)+' s'; });
+  engine.on('drex', row => { $('ticker').textContent = 'Drex: '+row.n+' decisions in '+(row.ms/1000).toFixed(2)+' s'; });
   engine.on('error',showError);
-  engine.on('sentence',renderChamber);
+  engine.on('sentence',() => {
+    rippleStart = performance.now();
+    renderChamber();
+  });
   engine.on('drift',drawSeats);
   engine.on('face',renderFace);
   engine.on('accepted', amendment => { $('subtitle').textContent = 'Amendment accepted · '+amendment.text; });
@@ -199,45 +206,97 @@ function renderChamber() {
   const weight = s.ministers.reduce((total,m) => total + m.weight,0);
   const support = s.ministers.reduce((total,m) => total + m.weight*m.stance,0)/(4*weight);
   const threshold = s.config.passage.default_threshold;
-  $('tally').innerHTML = '<small>Weighted stance · '+pct(support)+'</small>'+meter(support,thresholds[threshold])+
-    '<small>Default threshold · '+esc(human(threshold))+page(s.config.passageCite)+'</small>';
+  $('tally').innerHTML = '<span>Weighted stance <strong>'+pct(support)+'</strong></span>'+meter(support,thresholds[threshold])+
+    '<small>Default threshold: '+esc(human(threshold))+page(s.config.passageCite)+'</small>';
+  $('chamber').classList.toggle('has-speaker', Boolean(liveSpeech));
   const markup = s.ministers.map(card);
   const split = Math.ceil(markup.length/2);
   $('left').innerHTML = markup.slice(0,split).join('');
   $('right').innerHTML = markup.slice(split).join('');
-  $('rim').innerHTML = s.ministers.map(m => '<span><b style="color:'+color(m)+'">●</b> '+esc(m.short)+'</span>').join('');
+  $('rim').innerHTML = s.ministers.map(m => '<span><i aria-hidden="true" style="background:'+color(m)+'"></i>'+esc(m.short)+'</span>').join('');
   $('curve').innerHTML = curve();
   drawSeats();
 }
 
 function card(m) {
   const stance = Math.max(0,Math.min(4,Math.round(m.stance)));
-  const ally = m.ally ? minister(m.ally) : null;
-  const interruption = liveSpeech?.minister === m.id || liveSpeech?.short === m.short;
-  return '<article class="senator'+(interruption?' speaking':'')+'" style="--ministry:'+color(m)+'">'+
-    '<button class="card-top" data-minister="'+esc(m.id)+'">'+portrait(m)+'<span><h3>Senator of '+esc(m.short)+'</h3>'+
-    '<span class="meta"><span class="pips" aria-hidden="true">'+'●'.repeat(Math.min(10,Math.max(0,Math.round(m.weight))))+'</span> '+esc(m.weight)+' weight'+page(m.cite)+'</span>'+
-    (m.veto ? ' <span class="seal">TRIBUNE · VETO</span>' : '')+'</span></button>'+
-    '<div class="stance" aria-label="'+esc(LEVELS[stance])+'">'+stanceColors.map((c,i) => '<i class="'+(i===stance?'active':'')+'" style="background:'+c+'"></i>').join('')+'</div>'+
-    '<div class="meta">'+esc(LEVELS[stance])+' · '+m.stance.toFixed(2)+'/4'+(m.vote?' · '+esc(human(m.vote)):'')+'</div>'+
+  const speaking = liveSpeech?.minister === m.id || liveSpeech?.short === m.short;
+  const name = (m.veto ? 'Tribune' : 'Senator')+' of '+m.short;
+  return '<article data-seat-owner="'+esc(m.id)+'" class="senator'+(speaking?' speaking':'')+'">'+
+    '<button class="card-top" data-minister="'+esc(m.id)+'">'+portrait(m)+'<span><h3>'+esc(name)+
+    (speaking ? ' <span class="wave" aria-label="Speaking"><i></i><i></i><i></i></span>' : '')+'</h3>'+
+    '<span class="stance" aria-label="'+esc(LEVELS[stance])+'" title="'+esc(LEVELS[stance])+'">'+
+    stanceColors.map((c,i) => '<i class="'+(i===stance?'active':'')+'" style="background:'+c+'"></i>').join('')+'</span></span></button>'+
+    (m.condition ? '<p class="demand">'+esc(m.condition)+'</p>' : '')+
     (m.lastCite ? '<button class="chip" data-cite="'+esc(m.id)+'">'+citeLabel(m.lastCite)+'</button>' : '')+
-    (m.condition ? '<p class="ticket">'+esc(m.condition)+'</p>' : '')+
-    (ally ? '<p class="ally">⟷ '+esc(ally.short)+'</p>' : '')+
-    (interruption ? '<div class="speech">'+(liveSpeech.kind==='question'?'<b>Question to the Consul:</b> ':'')+esc(liveSpeech.line)+'<br><small>'+(liveSpeech.kind==='question'
-      ? 'Question drafted by LLM from your documents at setup · Drex chose to ask it now ('+pct(liveSpeech.p)+') · answer it out loud'
-      : 'Words by LLM · position, citation and condition by Drex')+' · voice: ElevenLabs</small></div>' : '')+'</article>';
+    (speaking ? '<div class="speech">'+esc(liveSpeech.line)+'</div>' : '')+'</article>';
+}
+
+function unlockAudio() {
+  const Audio = window.AudioContext || window.webkitAudioContext;
+  if (!Audio) return;
+  audioContext ||= new Audio();
+  if (audioContext.state === 'suspended') void audioContext.resume().catch(()=>{});
+}
+document.addEventListener('pointerdown',unlockAudio);
+document.addEventListener('keydown',unlockAudio);
+
+function animateSpeech(audio, event) {
+  currentAudio = audio;
+  if (!$('division').hidden) audio.muted = true;
+  let analyser, source, samples;
+  if (audioContext?.state === 'running') {
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    source = audioContext.createMediaElementSource(audio);
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+    samples = new Float32Array(analyser.fftSize);
+  }
+  audio.addEventListener('playing',()=>{
+    if (!$('division').hidden) return;
+    liveSpeech = event;
+    renderChamber();
+    if (!analyser || reducedMotion.matches) return;
+    let envelope = 0;
+    const tick = () => {
+      if (audio.ended || audio.paused || liveSpeech !== event) return;
+      analyser.getFloatTimeDomainData(samples);
+      const rms = Math.sqrt(samples.reduce((sum,v)=>sum+v*v,0)/samples.length);
+      envelope += (Math.min(1,rms*5)-envelope)*.34;
+      $('chamber').style.setProperty('--speech-lift',(-7*envelope).toFixed(2)+'px');
+      $('chamber').style.setProperty('--speech-level',(.22+envelope*.78).toFixed(2));
+      audioAnimation = requestAnimationFrame(tick);
+    };
+    cancelAnimationFrame(audioAnimation);
+    audioAnimation = requestAnimationFrame(tick);
+  });
+  const disconnect = () => { source?.disconnect(); analyser?.disconnect(); };
+  audio.addEventListener('ended',disconnect,{once:true});
+  audio.addEventListener('error',disconnect,{once:true});
+  return disconnect;
 }
 
 function playSpeech(event) {
-  if (!$('division').hidden) return;
-  liveSpeech = event;
-  clearTimeout(speechTimer);
-  renderChamber();
-  const hold = event.kind === 'question' ? 15000 : 8000;
-  speechTimer = setTimeout(() => { liveSpeech = null; renderChamber(); },hold);
   if (!event.line) return;
-  // Live ElevenLabs voice for this senator; errors are shown, never replaced by another voice.
-  speakLine('',event.line,event.voice).catch(showError);
+  speechQueue = speechQueue.then(async ()=>{
+    if (!$('division').hidden) return;
+    let dispose;
+    try {
+      await speakLine('',event.line,event.voice,audio => {
+        dispose = animateSpeech(audio,event);
+      });
+    } catch (error) { showError(error); }
+    finally {
+      dispose?.();
+      currentAudio = null;
+      liveSpeech = null;
+      cancelAnimationFrame(audioAnimation);
+      $('chamber').style.removeProperty('--speech-lift');
+      $('chamber').style.removeProperty('--speech-level');
+      renderChamber();
+    }
+  });
 }
 
 // Continuous seat colour: interpolate between the 5 stance colours so small Drex differences stay visible.
@@ -278,12 +337,19 @@ function drawSeats() {
   seatPositions = seats.map((member,i) => {
     const x = width/2+member.seat.x*span;
     const y = base-member.seat.y*span;
-    if (previousSeats.has(member.id) && Math.abs(previousSeats.get(member.id)-member.support)>.03) flashes.set(member.id,now);
+    const previous = previousSeats.get(member.id);
+    if (!reducedMotion.matches && previous != null && Math.abs(previous-member.support)>.01) {
+      const delay = now-rippleStart < 70 ? 330*Math.hypot(member.seat.x,member.seat.y) : 0;
+      flashes.set(member.id,{start:now+delay,previous});
+    }
     previousSeats.set(member.id,member.support);
-    const pulse = flashes.has(member.id) ? Math.max(0,1-(now-flashes.get(member.id))/670) : 0;
-    if (!pulse) flashes.delete(member.id);
+    const flash = flashes.get(member.id);
+    const elapsed = flash ? now-flash.start : Infinity;
+    const blendAmount = Math.max(0,Math.min(1,elapsed/220));
+    const pulse = flash && elapsed>=0 ? Math.max(0,1-elapsed/400) : 0;
+    if (elapsed>=400) flashes.delete(member.id);
     const r = radius+2*pulse;
-    ctx.fillStyle = blend(member.support);
+    ctx.fillStyle = blend(flash ? flash.previous+(member.support-flash.previous)*blendAmount : member.support);
     ctx.strokeStyle = (document.activeElement === canvas && i === seatFocus) || pulse>.4 ? '#fff2bd' : color(minister(member.ministry));
     ctx.beginPath();
     ctx.roundRect(x-r,y-r*.65,r*2,r*1.3,2);
@@ -349,7 +415,7 @@ function questions(q,a) {
 
 function auditMinister(m) {
   const s = state();
-  audit(m.short,'<p>'+esc(m.mandate)+'</p><p class="meta">Constitution'+page(m.cite)+'</p>'+
+  audit(m.short,'<p>'+esc(m.mandate)+'</p><p>Vote weight: '+esc(m.weight)+'; stance: '+m.stance.toFixed(2)+'/4'+(m.ally ? '; ally: '+esc(minister(m.ally)?.short) : '')+'</p><p class="meta">Constitution'+page(m.cite)+'</p>'+
     (m.cite?.quote ? '<blockquote>'+esc(m.cite.quote)+'</blockquote>' : '')+
     (m.veto ? '<p>Veto scope · '+esc(m.vetoScope)+'</p>' : '')+
     s.sentences.filter(row=>row.acta).reverse().map(row=>{
@@ -448,6 +514,7 @@ if (SpeechRecognition) {
   };
   recognition.onend = () => {
     activeSpeech = false;
+    $('chamber').classList.remove('consul-speaking');
     $('mic').setAttribute('aria-pressed','false');
     if (pendingSpeech) void address(pendingSpeech);
     pendingSpeech = '';
@@ -465,6 +532,7 @@ function startMic() {
     pendingSpeech = '';
     recognition.start();
     activeSpeech = true;
+    $('chamber').classList.add('consul-speaking');
     $('mic').setAttribute('aria-pressed','true');
     $('subtitle').textContent = 'Listening…';
   } catch (error) { showError(error); }
@@ -504,13 +572,13 @@ function renderVerdict(v) {
   engine.stopDrift();
   stopMic();
   stopCamera();
-  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  if (currentAudio) currentAudio.muted = true;
   $('chamber').hidden = true;
   const s = state();
   const special = v.specials?.find(row=>row.condition===v.thresholdReason && row.threshold===v.threshold);
   const comparison = '<button id="oracle-button">Ask one LLM</button><div id="oracle-result" aria-live="polite"></div>';
   $('division').innerHTML =
-    '<section class="verdict-card"><p class="eyebrow">The Division</p><h2 class="verdict-title">'+(v.passed?'Senatus Consultum':'Motio Reiecta')+'</h2>'+
+    '<section class="verdict-card"><p class="division-label">The division</p><h2 class="verdict-title">'+(v.passed?'Senatus Consultum':'Motio Reiecta')+'</h2>'+
     '<p>'+esc(s.decision)+'</p><div class="totals"><span><strong>'+esc(v.yes)+'</strong> AYES</span><span><strong>'+esc(v.total-v.yes)+'</strong> NOES</span></div>'+
     meter(v.share,thresholds[v.threshold])+'<p>'+pct(v.share)+' weighted ayes · '+esc(human(v.threshold))+' required</p>'+
     '<p class="meta">'+esc(v.thresholdReason)+ (special ? ' · Drex '+pct(special.appliesP)+page(special.cite) : page(s.config.passageCite))+'</p>'+
@@ -518,15 +586,20 @@ function renderVerdict(v) {
     v.vetoes.map(item=>{
       const m = minister(item.id);
       const overridden = v.overridden.includes(item.id);
-      return '<div class="veto"><strong>'+(overridden?'OVERRIDDEN':'VETO')+' · TRIBUNE OF '+esc(m.short.toUpperCase())+'</strong><p>'+esc(item.scope)+page(m.cite)+
+      return '<div class="veto"><strong>'+(overridden?'OVERRIDDEN':'VETO')+' — '+esc(m.short.toUpperCase())+'</strong><p>'+esc(item.scope)+page(m.cite)+
         ' · Drex in scope '+pct(item.inScopeP)+(item.inScopeP>=.4 && item.inScopeP<=.6?' · borderline':'')+'</p>'+
         '<p>Override '+(item.allowed?'permitted':'unavailable')+page(s.config.leaderCite)+' · '+esc(human(item.needT || 'no override threshold'))+' '+(item.thresholdOk?'met':'unmet')+
         ' · '+(s.config.leader.override_needs_condition ? (item.conditionOk?'condition accepted':'condition outstanding') : 'no acceptance required')+'</p></div>';
     }).join('')+
     (v.vetoes.some(row=>row.allowed && !v.overridden.includes(row.id)) && !v.overridden.length ? '<button class="gold" id="override">Override veto</button> ' : '')+
     '<button id="vote-acta">View division in Acta Senatus</button></section>'+
-    '<div class="division-grid"><section class="verdict-card"><h3>Votes</h3><table><thead><tr><th>Senator</th><th>Weight</th><th>Vote</th><th>Confidence</th></tr></thead><tbody>'+
-    v.votes.map(row=>'<tr><td>'+esc(row.short)+'</td><td>'+esc(row.weight)+'</td><td>'+esc(human(row.vote))+'</td><td>'+pct(row.p)+'</td></tr>').join('')+'</tbody></table>'+
+    '<div class="division-grid"><section class="verdict-card"><h3>Votes</h3><table><thead><tr><th>Senator</th><th>Weight</th><th>Vote</th><th>Caucus</th><th>Confidence</th></tr></thead><tbody>'+
+    v.votes.map(row => {
+      const c = row.caucus;
+      const caucus = c ? esc(c.for)+'/'+esc(c.n)+' for, '+esc(c.against)+'/'+esc(c.n)+' against' : '—';
+      const defied = row.defiesCaucus ? '<span class="caucus-defied">Defied its caucus</span>' : '';
+      return '<tr><td>'+esc(row.short)+'</td><td>'+esc(row.weight)+'</td><td>'+esc(human(row.vote))+'</td><td>'+caucus+defied+'</td><td>'+pct(row.p)+'</td></tr>';
+    }).join('')+'</tbody></table>'+
     '<h3>Dissent</h3>'+(v.dissent.map(row=>'<div class="dissent">'+portrait(minister(row.id))+'<div>'+esc(row.short)+' · '+esc(row.weight)+' weight'+
       (row.cite ? '<p class="meta">'+citeLabel(row.cite)+'</p><p>'+esc(citeText(row.cite))+'</p>' : '')+'</div></div>').join('')||'<p class="quiet">No dissenting votes</p>')+'</section>'+
     '<section class="verdict-card"><h3>Amendments</h3>'+(v.conditions.map(row=>'<div class="ticket">'+esc(row.text)+'<p class="meta">'+esc(row.from)+' · '+esc(row.status)+'</p></div>').join('')||'<p class="quiet">No amendments recorded</p>')+
