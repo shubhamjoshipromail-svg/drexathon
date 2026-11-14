@@ -77,4 +77,4 @@ sentence = { i, text, t, face, ministerDeltas, caucusMeanByMinistry }
 ## Approved shortcuts (user must approve each)
 | Shortcut | Approved? |
 |---|---|
-| (none yet) | |
+| NDI result cache (`cache/ndi/`): a document + schema NDI already read returns that earlier result instantly, labelled "cached from HH:MM (live read took N s)"; "Re-read documents live" forces a live read. Drex/LLM/voice stay live every time. | Yes: user asked for it, 14:00 |

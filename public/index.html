@@ -8,17 +8,23 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./assets/senate-loading.css">
 </head>
 <body>
 <header class="mast"><h1>The Senate of You</h1><span id="ticker"></span></header>
+<nav class="step-guide" aria-label="Your path through the Senate"><ol>
+<li data-step="1" aria-current="step"><span>1</span> Form the Senate</li>
+<li data-step="2"><span>2</span> Make your case</li>
+<li data-step="3"><span>3</span> Divide the Senate</li>
+</ol></nav>
 <div id="errors" role="alert" hidden></div>
 <main id="setup">
 <form id="convene" class="setup-card">
 <h2>Convene the Senate</h2>
 <label for="decision">What decision is before the Senate?</label>
 <textarea id="decision" rows="2" required placeholder="Should I quit my job to join Lumen Labs as founding engineer?"></textarea>
-<div class="setup-actions"><button type="button" id="sample">Use the example</button><span id="source-status"></span></div>
-<details class="documents"><summary>Customize the constitution and evidence</summary>
+<div class="setup-actions"><button type="button" id="sample">Use the example</button><button type="button" id="build-constitution">Build my constitution</button><span id="source-status" role="status"></span></div>
+<details class="documents" id="documents"><summary>Customize the constitution and evidence</summary>
 <label for="const-text">Your constitution</label>
 <textarea id="const-text" rows="9" spellcheck="false"></textarea>
 <div class="files"><label>Upload a constitution PDF<input id="constitution" type="file" accept="application/pdf,.pdf"></label>
@@ -29,12 +35,19 @@
 <textarea id="ev-text" rows="3"></textarea>
 
 </details>
+<label class="check-label"><input type="checkbox" id="ndi-fresh"> Re-read documents live</label>
+<p class="setup-help">NDI forms your Senate from your constitution. Add evidence, then convene.</p>
 <button class="gold" id="convene-button">Convene the Senate</button>
-<div id="progress" aria-live="polite"></div><div id="rollcall"></div>
+<details class="documents" id="setup-diagnostics" hidden><summary>Setup details</summary><div id="progress"></div><div id="rollcall"></div></details>
 </form>
 </main>
 <main id="chamber" hidden>
-<section class="motion"><div><h2 id="motion"></h2></div><div id="tally"></div></section>
+<section class="motion"><div><h2 id="motion"></h2><p id="goal"></p>
+<aside id="chamber-intro" class="chamber-intro"><button type="button" id="dismiss-intro" aria-label="Dismiss introduction">Got it</button>
+<p>You are the Consul. Your constitution formed this Senate.</p>
+<p>Argue out loud: after every sentence every senator and <span id="intro-caucus"></span> caucus members decide via Drex.</p>
+<p>Answer their questions, accept or refuse their amendments, then divide the Senate.</p></aside>
+</div><aside id="coach" aria-labelledby="coach-title"><h3 id="coach-title">What next</h3><div id="tally"></div><div id="coach-body"></div></aside></section>
 <section class="floor">
 <div class="senators" id="left"></div>
 <div class="arena">
@@ -67,6 +80,25 @@
 <div class="commands"><span id="live-status" role="status"></span><button id="transcript">Transcript</button><button class="gold" id="vote">Divide the Senate</button></div></section>
 </main>
 <main id="division" hidden></main>
+<dialog id="constitution-wizard" aria-labelledby="wizard-title">
+<div class="dialog-head"><h2 id="wizard-title">Build my constitution</h2><form method="dialog"><button aria-label="Close constitution builder">Close</button></form></div>
+<form id="wizard-form">
+<p>Your answers become your constitution. NDI reads it like any document.</p>
+<fieldset class="wizard-choices"><legend>What matters to you? Choose 3–7.</legend><div id="ministry-choices"></div>
+<div class="custom-ministry"><input id="custom-ministry" maxlength="50" aria-label="Custom ministry name" placeholder="Your own ministry"><button id="add-ministry" type="button">Add custom</button></div>
+<p id="wizard-count" role="status"></p></fieldset>
+<div id="ministry-fields"></div>
+<fieldset class="wizard-passage"><legend>How decisions pass</legend>
+<label for="wizard-threshold">Passage</label><select id="wizard-threshold"><option value="simple">Simple majority</option><option value="three_fifths">3/5 majority</option><option value="two_thirds">2/3 majority</option><option value="unanimous">Unanimous</option></select>
+<label class="check-label"><input id="wizard-special" type="checkbox"> Add a special rule for financial risk</label>
+<div id="special-fields" hidden><label for="wizard-risk">Decisions risking more than $</label><input id="wizard-risk" type="number" min="0.01" step="0.01" value="20000">
+<label for="wizard-special-threshold">need</label><select id="wizard-special-threshold"><option value="simple">Simple majority</option><option value="three_fifths">3/5 majority</option><option value="two_thirds" selected>2/3 majority</option><option value="unanimous">Unanimous</option></select></div>
+<label class="check-label"><input id="wizard-override" type="checkbox"> The leader may override a veto</label>
+<label id="override-fields" hidden>Override only if<input id="wizard-override-condition" value="a two-thirds majority of weighted votes supports the decision and the vetoing ministry's condition is written down and accepted"></label>
+</fieldset>
+<p id="wizard-error" role="alert" hidden></p>
+<div class="wizard-footer"><button class="gold" type="submit">Use this constitution</button><span>You can edit every line before NDI reads it.</span></div>
+</form></dialog>
 <dialog id="acta"><div class="dialog-head"><h2 id="audit-title">Acta Senatus</h2><form method="dialog"><button aria-label="Close">Close</button></form></div><div id="audit-body"></div></dialog>
 <script type="module" src="./view.js"></script>
 </body></html>

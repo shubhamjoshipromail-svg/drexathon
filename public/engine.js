@@ -21,10 +21,11 @@ const VOICES = { finance: 'onwK4e9ZLuTAKqWW03F9' /* Daniel, formal */, health: '
   ambition: 'pNInz6obpgDQGcFmaJgB' /* Adam, firm */, adventure: 'IKne3meq5aSn9XLyUdCD' /* Charlie, energetic */, 'future self': 'pqHfZKP75CvOlQylNhV4' /* Bill, old + wise */ };
 const SPARE_VOICES = ['JBFqnCBsd6RMkjVDRZzb', 'XrExE9yKIg1WjnnlVkGX', 'cjVigY5qzO86Huf0OWal', 'nPczCjzI2devNBz1zQrb'];
 // Live speech: fetch an mp3 for this line from ElevenLabs via the server and play it. Resolves when playback ends.
-export async function speakLine(base, text, voiceId) {
+// onAudio(audioEl) is called before playback starts, so the UI can attach an AnalyserNode for talking animation.
+export async function speakLine(base, text, voiceId, onAudio) {
   const r = await fetch(base + '/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, voice_id: voiceId }) });
   if (!r.ok) throw new Error('Voice: ' + (await r.text()).slice(0, 200));
-  const url = URL.createObjectURL(await r.blob()); const audio = new Audio(url);
+  const url = URL.createObjectURL(await r.blob()); const audio = new Audio(url); onAudio?.(audio);
   await new Promise((res, rej) => { audio.onended = res; audio.onerror = () => rej(new Error('Voice playback failed')); audio.play().catch(rej); });
   URL.revokeObjectURL(url);
 }
@@ -40,29 +41,34 @@ export async function readJson(r, what) {
 }
 
 // ---------- NDI ----------
+// Cached NDI reads are returned instantly with cached:true/cachedAt; setNdiFresh(true) forces live reads.
+let NDI_FRESH = false;
+export const setNdiFresh = v => { NDI_FRESH = !!v; };
 const b64 = async bytes => {
   if (typeof Buffer !== 'undefined') return Buffer.from(bytes).toString('base64');
   const u = new Uint8Array(bytes); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s);
 };
 export async function ndiExtract(base, bytes, name, schema) {
   const t = performance.now();
-  const r = await fetch(base + '/api/ndi/doc', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, schema, pdf_b64: await b64(bytes) }) });
+  const r = await fetch(base + '/api/ndi/doc', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, schema, pdf_b64: await b64(bytes), fresh: NDI_FRESH }) });
   const j = await readJson(r, 'NDI');
   if (r.status !== 200 || j.extract?.status !== 'succeeded') throw new Error('NDI failed: ' + JSON.stringify(j).slice(0, 300));
-  return { ms: Math.round(performance.now() - t), result: j.extract.result };
+  return { ms: Math.round(performance.now() - t), result: j.extract.result, cached: !!j.cached, cachedAt: j.cachedAt || null, liveMs: j.liveMs };
 }
 // Pull page + quoted source text for /<arr>/<i> out of NDI field citations.
 const citeOf = (result, p) => { const f = result.fields?.find(x => x.path === p); const c = f?.citations?.[0]; return c ? { page: c.location?.page, quote: c.source_text } : { page: null, quote: null }; };
 // Text the user wrote / pasted (server renders it to PDF, NDI reads it) and web links (NDI reads the page).
 async function ndiPost(base, route, body, label) {
   const t = performance.now();
-  const r = await fetch(base + route, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const r = await fetch(base + route, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, fresh: NDI_FRESH }) });
   const j = await readJson(r, 'NDI');
   if (r.status !== 200 || j.extract?.status !== 'succeeded') throw new Error(`NDI failed on ${label}: ` + JSON.stringify(j.error || j.extract?.error || j).slice(0, 300));
-  return { ms: Math.round(performance.now() - t), result: j.extract.result };
+  return { ms: Math.round(performance.now() - t), result: j.extract.result, cached: !!j.cached, cachedAt: j.cachedAt || null, liveMs: j.liveMs };
 }
 export const readConstitutionText = (base, text, name = 'my-constitution.pdf') => ndiPost(base, '/api/ndi/text', { text, name, schema: CONSTITUTION_SCHEMA }, name);
 export const readEvidenceText = (base, text, name = 'pasted-text.pdf') => ndiPost(base, '/api/ndi/text', { text, name, schema: EVIDENCE_SCHEMA }, name);
+export const readConstitutionWiki = (base, site, title) => ndiPost(base, '/api/ndi/wiki', { site, title, schema: CONSTITUTION_SCHEMA }, `${site}/${title}`);
+export const readConstitutionUrl = (base, url) => ndiPost(base, '/api/ndi/url', { url, schema: CONSTITUTION_SCHEMA }, url);
 export const readEvidenceUrl = (base, url) => ndiPost(base, '/api/ndi/url', { url, schema: EVIDENCE_SCHEMA }, url);
 export const readConstitution = (base, bytes, name = 'constitution.pdf') => ndiExtract(base, bytes, name, CONSTITUTION_SCHEMA);
 export const readEvidence = (base, bytes, name = 'evidence.pdf') => ndiExtract(base, bytes, name, EVIDENCE_SCHEMA);
@@ -88,10 +94,20 @@ function seats(n) {
   return pts.sort((a, b) => b.th - a.th);
 }
 
+// Setup gate: is the motion something a chamber can vote for or against? (Drex decides, ~0.2 s)
+export async function checkMotion(base, decision) {
+  const r = await fetch(base + '/api/drex', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: `Proposed motion: "${decision}"`,
+    questions: { votable: { type: 'noul', instructions: 'Is this a concrete yes/no decision or proposal that a person could vote for or against (e.g. "Should I take the job?"), rather than an open question like "What is the point of life?"' } } }) });
+  const j = await readJson(r, 'Drex'); if (r.status !== 200) throw new Error('Drex ' + r.status + ': ' + JSON.stringify(j).slice(0, 200));
+  const p = j.answers.votable.noul ?? j.answers.votable.confidence;
+  return { ok: p >= 0.5, p };
+}
+
 // ---------- Engine ----------
-export function createEngine({ base = '', config, decision, caucusSize = 150, drexModel = 'drex-v2.0', faceModel = 'drex-max-v1.1' }) {
+export function createEngine({ base = '', config, decision, caucusFeedback = true, caucusSize = 150, drexModel = 'drex-v2.0', faceModel = 'drex-max-v1.1' }) {
   const listeners = {};
   const emit = (type, data) => (listeners[type] || []).forEach(f => { try { f(data); } catch (e) { console.error(e); } });
+  if (!config.ministries?.length) throw new Error('NDI found no voting bodies (ministries/branches) in this constitution, so there is no Senate to convene. Try a document that says who decides and how.');
   const S = { decision, config, ministers: [], members: [], sentences: [], faces: [], accepted: [], drexLog: [], busy: false, verdict: null, interrupts: [], questions: [], openQuestion: null, llmLog: [] };
 
   // Agents (code, no LLM)
@@ -132,14 +148,23 @@ export function createEngine({ base = '', config, decision, caucusSize = 150, dr
     S.questions.filter(q => q.answer).length ? `Questions the leader has answered: ${S.questions.filter(q => q.answer).map(q => `${q.short} asked "${q.text}"; leader said "${q.answer}"`).join('; ')}` : '',
     S.interrupts.filter(x => x.kind !== 'question').length ? `Recent floor interventions: ${S.interrupts.filter(x => x.kind !== 'question').slice(-3).map(x => `${x.short} (${label(x.stance)}) raised ${x.cite ? (x.cite.kind === 'rule' ? `Rule ${x.cite.id}` : `"${x.cite.fact}"`) : 'its mandate'}${x.condition ? ` and demanded "${x.condition}"` : ''}`).join('; ')}` : '',
     extra].filter(Boolean).join('\n\n');
+  // The swarm feeds back: each senator sees how its own caucus currently leans (before this sentence).
+  const caucusOf = m => { const v = S.members.filter(c => c.ministry === m.id).map(c => c.support);
+    return { n: v.length, against: v.filter(x => x < 1.5).length, for: v.filter(x => x > 2.5).length, mean: mean(v) }; };
+  const caucusLine = m => { if (!S.sentences.length || !caucusFeedback) return ''; const c = caucusOf(m);
+    return `\nYour caucus right now: ${c.against} of ${c.n} members lean against, ${c.for} lean for (mean ${label(c.mean)}). You answer to them, but you may disagree with them if your rules require it.`; };
+  // For drafting conditions: only the ministry's OWN rules (shared 'all' rules made every senator demand the same thing).
+  const ownBrief = m => `Ministry of ${m.short}. Mandate: ${m.mandate}${m.veto ? ` Veto over: ${m.vetoScope}.` : ''} Own rules: ${m.rules.filter(r => (r.applies_to || '').toLowerCase() !== 'all').map(r => `Rule ${r.id}: ${r.text}`).join(' ') || 'none (use its mandate)'}`;
   const ministerBrief = m => `You are the Ministry of ${m.short} in the leader's personal cabinet. Your mandate: ${m.mandate}${m.veto ? ` You hold a veto over: ${m.vetoScope}.` : ''} Your rules: ${m.rules.map(r => `Rule ${r.id}: ${r.text}`).join(' ') || 'none'}`;
 
   // Setup: from THIS constitution + evidence + decision, the LLM drafts per ministry 3 candidate conditions and
   // 2 questions about information the documents do not give. Drex later decides live whether/which to use.
   async function draftConditions() {
     const txt = await llm([{ role: 'system', content: 'You draft options for a personal decision cabinet. Reply with JSON only.' },
-      { role: 'user', content: `Decision: "${S.decision}"\nEvidence:\n${factsText() || '(none)'}\n\nFor each ministry below write (a) 3 short, concrete conditions (max 14 words) it could demand before agreeing, grounded in ITS OWN rules and the evidence (not rules that apply to all ministries; no two ministries may share a condition), and (b) 2 short questions (max 14 words) it would ask the leader to learn something its rules need that the evidence does NOT say. Reply as JSON {"<ministry id>": {"conditions": ["..."], "questions": ["..."]}}.\n${S.ministers.map(m => `${m.id}: ${ministerBrief(m)}`).join('\n')}` }]);
-    const j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1));
+      { role: 'user', content: `Decision: "${S.decision}"\nEvidence:\n${factsText() || '(none)'}\n\nFor each ministry below write (a) 3 short, concrete conditions (max 14 words) it could demand before agreeing, grounded in ITS OWN rules and the evidence (not rules that apply to all ministries; no two ministries may share a condition), and (b) 2 short questions (max 14 words) it would ask the leader to learn something its rules need that the evidence does NOT say. Reply as JSON {"<ministry id>": {"conditions": ["..."], "questions": ["..."]}}.\n${S.ministers.map(m => `${m.id}: ${ownBrief(m)}`).join('\n')}` }]);
+    let j; const parse = t => { const s = t.replace(/```(json)?/g, '').replace(/[\u0000-\u001f]+/g, ' '); return JSON.parse(s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1)); };
+    try { j = parse(txt); } catch {   // one retry: the LLM sometimes returns broken JSON
+      const t2 = await llm([{ role: 'system', content: 'Return valid JSON only.' }, { role: 'user', content: `Fix this into valid JSON, same content:\n${txt}` }]); j = parse(t2); }
     S.ministers.forEach(m => { const x = j[m.id] || {}; m.conditions = (Array.isArray(x) ? x : x.conditions || []).slice(0, 3); m.questions = (x.questions || []).slice(0, 2); });
     emit('conditions', S.ministers.map(m => ({ id: m.id, conditions: m.conditions, questions: m.questions })));
   }
@@ -164,7 +189,7 @@ export function createEngine({ base = '', config, decision, caucusSize = 150, dr
       const q = {};
       const citeKeys = {};
       for (const m of S.ministers) {
-        const brief = ministerBrief(m);
+        const brief = ministerBrief(m) + caucusLine(m);
         q[`${m.id}_stance`] = { type: 'score', criteria: LEVELS, instructions: `${brief}\nJudging only by your mandate and rules, after the leader's latest sentence, where do you stand on the decision?` };
         q[`${m.id}_interrupt`] = { type: 'noul', instructions: `${brief}\nDid the leader's latest sentence touch your mandate or rules so directly that you must speak up right now?` };
         const ck = { none: 'Nothing specific' }; m.rules.forEach(r => { ck[`r${r.id}`] = `Rule ${r.id}: ${r.text}`; }); config.facts.forEach((f, i) => { ck[`f${i}`] = f.fact; });
@@ -199,7 +224,7 @@ export function createEngine({ base = '', config, decision, caucusSize = 150, dr
       sen.ministerDeltas = Object.fromEntries(S.ministers.map((m, k) => [m.id, +(m.stance - before[k]).toFixed(2)]));
       sen.caucusMeanByMinistry = Object.fromEntries(S.ministers.map(m => [m.id, +mean(S.members.filter(c => c.ministry === m.id).map(c => c.support)).toFixed(2)]));
       sen.caucusMean = +mean(S.members.map(c => c.support)).toFixed(2);
-      emit('sentence', sen);
+      emit('sentence', sen); emit('coach', coach());
       // A question beats an interrupt: the senator whose Drex `ask` answer is a question with the highest confidence (> 0.5).
       const asks = S.ministers.map(m => ({ m, a: a[`${m.id}_ask`] })).filter(x => x.a && x.a.choice !== 'none' && x.a.confidence > 0.5).sort((x, y) => y.a.confidence - x.a.confidence);
       // Floor goes to whoever Drex rates more urgent: the best question or the most urgent interrupt.
@@ -252,7 +277,7 @@ export function createEngine({ base = '', config, decision, caucusSize = 150, dr
     try {
       const q = {};
       for (const m of S.ministers) {
-        q[`${m.id}_vote`] = { type: 'choice', criteria: { yes: 'Yes', no: 'No', yes_with_condition: `Yes, but only with a condition${m.condition ? ` ("${m.condition}")` : ''}` }, instructions: `${ministerBrief(m)}\nYour current position: ${label(m.stance)}. Cast your vote on the decision.` };
+        q[`${m.id}_vote`] = { type: 'choice', criteria: { yes: 'Yes', no: 'No', yes_with_condition: `Yes, but only with a condition${m.condition ? ` ("${m.condition}")` : ''}` }, instructions: `${ministerBrief(m)}${caucusLine(m)}\nYour current position: ${label(m.stance)}. Cast your vote on the decision.` };
         if (m.veto) q[`${m.id}_scope`] = { type: 'noul', instructions: `Does this decision, as the leader described it, fall under this veto scope: "${m.vetoScope}"?` };
       }
       (config.passage.special || []).forEach((s, i) => { q[`sp${i}`] = { type: 'noul', instructions: `Does this decision fall under: "${s.condition}"?` }; });
@@ -285,7 +310,10 @@ export function createEngine({ base = '', config, decision, caucusSize = 150, dr
       const dissent = S.ministers.filter(m => m.vote === 'no').map(m => ({ id: m.id, short: m.short, weight: m.weight, cite: m.lastCite, stance: m.stance }));
       const gut = Object.fromEntries(Object.keys(FACES).map(k => [k, S.sentences.filter(s => s.face?.label === k).map(s => s.i)]));
       S.verdict = { passed, yes, total, share, threshold, thresholdReason, majority, vetoes: overrideCheck, overridden: overridden.map(v => v.id), blocking: blocking.map(v => v.id), conditions, dissent, gut,
-        votes: S.ministers.map(m => ({ id: m.id, short: m.short, weight: m.weight, vote: m.vote, p: m.voteP, inScopeP: m.inScopeP })),
+        // Display-only flag (no effect on the outcome): a senator voting yes while >= 70% of its caucus leans against, or no while >= 70% leans for.
+        votes: S.ministers.map(m => { const c = caucusOf(m); const yesVote = m.vote !== 'no';
+          return { id: m.id, short: m.short, weight: m.weight, vote: m.vote, p: m.voteP, inScopeP: m.inScopeP, caucus: { against: c.against, for: c.for, n: c.n, mean: +c.mean.toFixed(2) },
+            defiesCaucus: yesVote ? c.against / c.n >= 0.7 : c.for / c.n >= 0.7 }; }),
         curve: S.sentences.map(s => ({ i: s.i, text: s.text, caucusMean: s.caucusMean, byMinistry: s.caucusMeanByMinistry, face: s.face?.label })),
         specials: (config.passage.special || []).map(s => ({ condition: s.condition, threshold: s.threshold, appliesP: s.appliesP })),
         acta: { state: stateText('The leader has called the vote.'), q, a } };
@@ -315,6 +343,39 @@ export function createEngine({ base = '', config, decision, caucusSize = 150, dr
     S.oneLlm = out; emit('oneLlm', out); return out;
   }
 
-  async function start() { await draftConditions().catch(e => { console.warn('conditions', e); emit('error', 'conditions: ' + e.message); }); return sentence(`I am putting this decision to the cabinet: ${S.decision}`); }
-  return { state: S, on: (t, f) => ((listeners[t] ||= []).push(f), () => listeners[t] = listeners[t].filter(x => x !== f)), start, sentence, vote, oneLlm, driftTick, startDrift, stopDrift, readFace, draftConditions, label };
+  // Which threshold applies, decided by Drex at the start (so the tally shows the real target from sentence 0). Re-judged at the vote.
+  async function judgeThreshold() {
+    const sp = config.passage.special || []; let threshold = config.passage.default_threshold || 'simple', reason = 'default', p = null;
+    if (sp.length) { const a = await drex(Object.fromEntries(sp.map((s, i) => [`sp${i}`, { type: 'noul', instructions: `Does this decision fall under: "${s.condition}"?` }])), `Decision: "${S.decision}"`);
+      sp.forEach((s, i) => { const q = a[`sp${i}`].noul ?? a[`sp${i}`].confidence; if (q > 0.5 && RANK[s.threshold] > RANK[threshold]) { threshold = s.threshold; reason = s.condition; p = q; } }); }
+    S.thresholdNow = { threshold, reason, p, frac: FRAC[threshold] ?? 0.5 }; emit('threshold', S.thresholdNow); return S.thresholdNow;
+  }
+
+  // Path to passage: computed from current Drex stances (a projection, not a vote) + the constitution's thresholds/vetoes.
+  function coach() {
+    const T = S.thresholdNow || { threshold: config.passage.default_threshold || 'simple', reason: 'default', frac: FRAC[config.passage.default_threshold] ?? 0.5 };
+    const total = S.ministers.reduce((x, m) => x + m.weight, 0);
+    const yesW = S.ministers.filter(m => m.stance > 2.1).reduce((x, m) => x + m.weight, 0);
+    const projected = yesW / total;
+    const vetoRisk = S.ministers.filter(m => m.veto && m.stance < 1.6).map(m => ({ id: m.id, short: m.short, scope: m.vetoScope, demand: m.condition, stance: m.stance }));
+    const persuadable = S.ministers.filter(m => m.stance <= 2.1).sort((x, y) => (y.stance * y.weight) - (x.stance * x.weight)).slice(0, 3)
+      .map(m => ({ id: m.id, short: m.short, weight: m.weight, stance: m.stance, demand: m.condition, cite: m.lastCite }));
+    const openConditions = S.ministers.filter(m => m.condition && !S.accepted.some(c => c.text === m.condition)).map(m => ({ from: m.short, text: m.condition }));
+    const steps = [];
+    if (S.verdict) steps.push(S.verdict.passed ? 'The motion carried. See the conditions you committed to.' : 'The motion failed. See who blocked it and why, or argue again and re-divide.');
+    else {
+      if (S.openQuestion) steps.push(`Answer ${S.openQuestion.short}: "${S.openQuestion.text}"`);
+      vetoRisk.forEach(v => steps.push(`${v.short} may veto (${v.scope}). ${v.demand ? `Accept its amendment out loud: "${v.demand}"` : 'Address its concern.'}`));
+      if (projected + 1e-9 < T.frac) { const p = persuadable[0]; if (p) steps.push(`You have ${Math.round(projected * 100)}% of the ${Math.round(T.frac * 100)}% needed. Win over ${p.short} (${p.weight} vote${p.weight > 1 ? 's' : ''})${p.demand ? `: it wants "${p.demand}"` : ''}.`); }
+      else if (!vetoRisk.length) steps.push('You likely have the votes. Divide the Senate when ready.');
+    }
+    return { threshold: T.threshold, reason: T.reason, need: T.frac, projected, yesWeight: yesW, total, vetoRisk, persuadable, openQuestion: S.openQuestion, openConditions, steps,
+      ready: projected + 1e-9 >= T.frac && !vetoRisk.length, decided: !!S.verdict, note: 'Projection from current Drex stances (lean for > 2.1 of 4), not a vote.' };
+  }
+
+  async function start() {
+    await Promise.all([draftConditions().catch(e => { console.warn('conditions', e); emit('error', 'conditions: ' + e.message); }), judgeThreshold().catch(e => emit('error', 'threshold: ' + e.message))]);
+    return sentence(`I am putting this decision to the cabinet: ${S.decision}`);
+  }
+  return { state: S, on: (t, f) => ((listeners[t] ||= []).push(f), () => listeners[t] = listeners[t].filter(x => x !== f)), start, sentence, vote, oneLlm, coach, driftTick, startDrift, stopDrift, readFace, draftConditions, label };
 }

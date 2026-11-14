@@ -1,0 +1,75 @@
+US Constitution via NDI 8821 ms: 
+  passage {"special":[{"condition":"Bills for raising Revenue","threshold":"simple"},{"condition":"Treaties","threshold":"two_thirds"},{"condition":"Expulsion of a Member","threshold":"two_thirds"},{"condition"
+  rules 0
+
+=== US Constitution
+Motion: Should the federal government adopt a four-day work week for all federal employees?
+US constitution failed: Drex 422: {"error":{"type":"invalid_request_error","message":"questions: must contain at least one question","issues":[{"path":"questions","message":"must contain at least one question"}]},"request_id":"req_62a6692478b9ab7d800ffe8c28907c9a"}
+
+=== Philosophical
+Motion: What is the point of life?
+  >> Health ASKS: How many weekly work hours does this require?
+  "I think the point is to build things that outlast me, even if I sacrifice comfort."
+    Finance 2.0 | Health 2.0 | Family 2.0 | Ambition 2.1 | Adventure 2.0 | Future Self 2.1
+  VERDICT PASSED share 100% need simple (default (Art. passage)); vetoes none
+  votes Finance:yes_with_condition [caucus 0/25 against] | Health:yes_with_condition [caucus 1/25 against] | Family:yes_with_condition [caucus 0/25 against] | Ambition:yes_with_condition [caucus 0/25 against] | Adventure:yes_with_condition [caucus 3/25 against] | Future Self:yes_with_condition [caucus 0/25 against]
+
+=== Values
+Motion: Should I chase meaning over money in my thirties?
+  >> Health ASKS: What is the expected average weekly hour commitment for this role?
+  "I would take a 40 percent pay cut to work on something I believe in."
+    Finance 2.0 | Health 2.1 | Family 2.1 | Ambition 2.4 | Adventure 2.4 | Future Self 2.1
+  "My savings would still cover eight months."
+    Finance 2.2 | Health 2.1 | Family 2.1 | Ambition 2.3 | Adventure 2.1 | Future Self 1.9
+  VERDICT PASSED share 100% need two_thirds (Any decision that risks more than $20,000 or changes my job); vetoes none
+  votes Finance:yes_with_condition [caucus 0/25 against] | Health:yes_with_condition [caucus 0/25 against] | Family:yes_with_condition [caucus 2/25 against] | Ambition:yes_with_condition [caucus 0/25 against] | Adventure:yes_with_condition [caucus 0/25 against] | Future Self:yes_with_condition [caucus 9/25 against]
+
+=== Ablation caucusFeedback=true run 1
+Motion: Should I quit my job to join Lumen Labs as founding engineer?
+  "I am bored, and this is the scary bet I promised myself once a year."
+    Finance 1.8 | Health 1.6 | Family 1.5 | Ambition 2.3 | Adventure 3.2 | Future Self 0.8
+  >> Future Self says: We oppose this, as Rule 2.6 forbids joining companies with under twelve months of runway, endangering your long-term financial stability.
+  "I would keep living here and fly to Austin three days a week."
+    Finance 1.8 | Health 1.6 | Family 1.6 | Ambition 2.3 | Adventure 2.5 | Future Self 1.0
+  "Launch weeks might be sixty hours, but only a few times a year."
+    Finance 1.8 | Health 1.4 | Family 1.3 | Ambition 2.4 | Adventure 2.8 | Future Self 0.7
+  VERDICT REJECTED share 38% need two_thirds (Any decision that risks more than $20,000 or changes my job); vetoes none
+  votes Finance:no [caucus 4/25 against] | Health:no [caucus 17/25 against] | Family:no [caucus 14/25 against] | Ambition:yes [caucus 0/25 against] | Adventure:yes [caucus 0/25 against] | Future Self:no [caucus 23/25 against]
+
+=== Ablation caucusFeedback=true run 2
+Motion: Should I quit my job to join Lumen Labs as founding engineer?
+  >> Adventure says: We urge you to quit, honoring Rule 2.5 by embracing the terrifying thrill of founding Lumen Labs with unbridled joy.
+  >> Future Self says: We advise against it; Rule 2.6 prohibits joining a company with less than 12 months of runway, preserving your wealth.
+  "I am bored, and this is the scary bet I promised myself once a year."
+    Finance 1.8 | Health 1.6 | Family 1.5 | Ambition 2.3 | Adventure 3.2 | Future Self 0.8
+  >> Adventure says: We urge you to quit and join Lumen Labs, honoring Rule 2.5: once a year, take one bet that scares you.
+  "I would keep living here and fly to Austin three days a week."
+    Finance 1.8 | Health 1.6 | Family 1.7 | Ambition 2.4 | Adventure 2.6 | Future Self 0.8
+  "Launch weeks might be sixty hours, but only a few times a year."
+    Finance 1.9 | Health 1.6 | Family 1.6 | Ambition 2.4 | Adventure 2.9 | Future Self 0.8
+  VERDICT REJECTED share 38% need two_thirds (Any decision that risks more than $20,000 or changes my job); vetoes none
+  votes Finance:no [caucus 1/25 against] | Health:no [caucus 4/25 against] | Family:no [caucus 8/25 against] | Ambition:yes [caucus 0/25 against] | Adventure:yes [caucus 0/25 against] | Future Self:no [caucus 25/25 against]
+
+=== Ablation caucusFeedback=false run 1
+Motion: Should I quit my job to join Lumen Labs as founding engineer?
+  "I am bored, and this is the scary bet I promised myself once a year."
+    Finance 1.9 | Health 1.8 | Family 1.8 | Ambition 2.2 | Adventure 3.1 | Future Self 1.5
+  >> Adventure says: We urge you to embrace this terrifying curiosity, honoring Rule 2.5’s annual mandate to fuel your life with bold, joyful discovery.
+  "I would keep living here and fly to Austin three days a week."
+    Finance 1.9 | Health 1.8 | Family 1.7 | Ambition 2.2 | Adventure 2.6 | Future Self 1.1
+  "Launch weeks might be sixty hours, but only a few times a year."
+    Finance 1.9 | Health 1.7 | Family 1.8 | Ambition 2.2 | Adventure 2.9 | Future Self 1.1
+  VERDICT REJECTED share 38% need two_thirds (Any decision that risks more than $20,000 or changes my job); vetoes Family 0.56
+  votes Finance:no [caucus 3/25 against] | Health:no [caucus 5/25 against] | Family:no [caucus 8/25 against] | Ambition:yes [caucus 0/25 against] | Adventure:yes [caucus 0/25 against] | Future Self:no [caucus 25/25 against]
+
+=== Ablation caucusFeedback=false run 2
+Motion: Should I quit my job to join Lumen Labs as founding engineer?
+  "I am bored, and this is the scary bet I promised myself once a year."
+    Finance 1.9 | Health 1.8 | Family 1.8 | Ambition 2.2 | Adventure 3.1 | Future Self 1.5
+  >> Adventure says: We invoke Rule 2.5 to release this necessary terror; proceed to Lumen Labs to reclaim your right to joyful discovery.
+  "I would keep living here and fly to Austin three days a week."
+    Finance 1.9 | Health 1.8 | Family 1.7 | Ambition 2.2 | Adventure 2.6 | Future Self 1.1
+  "Launch weeks might be sixty hours, but only a few times a year."
+    Finance 1.9 | Health 1.7 | Family 1.8 | Ambition 2.2 | Adventure 2.9 | Future Self 1.1
+  VERDICT REJECTED share 38% need two_thirds (Any decision that risks more than $20,000 or changes my job); vetoes Family 0.56
+  votes Finance:no [caucus 3/25 against] | Health:no [caucus 5/25 against] | Family:no [caucus 8/25 against] | Ambition:yes [caucus 0/25 against] | Adventure:yes [caucus 0/25 against] | Future Self:no [caucus 25/25 against]

@@ -1,15 +1,16 @@
 // NDI extract schemas (shared by the app and the P0 gate scripts).
 export const CONSTITUTION_SCHEMA = { type: 'object', properties: {
-  ministries: { type: 'array', description: 'Every ministry / department / role that votes on decisions, as defined in the document.', items: { type: 'object', properties: {
+  ministries: { type: 'array', description: 'Every body that votes on or can block decisions, as defined in the document: ministries, departments, roles, or for a national/organisational constitution its branches, houses and offices (e.g. House of Representatives, Senate, President, board, members).', items: { type: 'object', properties: {
     name: { type: 'string', description: 'Ministry name, e.g. Ministry of Health' },
     mandate: { type: 'string', description: 'What this ministry protects or is responsible for, one sentence' },
     vote_weight: { type: 'number', description: 'Its vote weight (number of votes). 1 if not stated.' },
     has_veto: { type: 'boolean', description: 'True only if the document explicitly gives this ministry a veto' },
     veto_scope: { type: 'string', description: 'If it has a veto: exactly which decisions the veto covers. Empty string otherwise.' },
   } } },
-  rules: { type: 'array', description: 'Every standing rule (numbered rules such as Rule 2.1) that decisions must respect. Not the passage or override articles.', items: { type: 'object', properties: {
+  rules: { type: 'array', description: 'Every standing rule, limit or protected right that decisions must respect (numbered rules such as Rule 2.1, or clauses/amendments in a national constitution). Max 25, most important first. Not the passage or override articles.', items: { type: 'object', properties: {
     id: { type: 'string', description: 'Rule number as written, e.g. 2.1' },
     text: { type: 'string', description: 'The rule, as one clear sentence' },
+    // applies_to: for national constitutions, the branch it constrains most, or 'all'
     applies_to: { type: 'string', description: 'Name of the ministry the rule belongs to, or "all" if it binds all ministries' },
   } } },
   passage: { type: 'object', properties: {

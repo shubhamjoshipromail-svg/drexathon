@@ -1,4 +1,6 @@
-import { checkMotion, readConstitution, readEvidence, readConstitutionText, readEvidenceText, readEvidenceUrl, buildConfig, createEngine, LEVELS, speakLine } from './engine.js';
+import { createSenateLoading } from './assets/senate-loading.js';
+import { SHELF } from './shelf.js';
+import { checkMotion, readConstitutionUrl, readConstitutionWiki, readConstitution, readEvidence, readConstitutionText, readEvidenceText, readEvidenceUrl, buildConfig, createEngine, LEVELS, speakLine, setNdiFresh } from './engine.js';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -22,6 +24,7 @@ let audioContext, currentAudio, audioAnimation;
 let speechQueue = Promise.resolve();
 let rippleStart = -Infinity;
 let moverTimer, driftTimer;
+let lastCoachMarkup = '';
 const highlightedSeats = new Set();
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const state = () => engine.state;
@@ -68,6 +71,140 @@ function setBusy(value, message = '') {
   $('mic').disabled = value || !recognition;
 }
 
+function setStep(step) {
+  for (const item of document.querySelectorAll('[data-step]')) {
+    if (+item.dataset.step === step) item.setAttribute('aria-current','step');
+    else item.removeAttribute('aria-current');
+    item.classList.toggle('complete', +item.dataset.step < step);
+  }
+}
+$('dismiss-intro').onclick = () => { $('chamber-intro').hidden = true; };
+$('ndi-fresh').onchange = () => setNdiFresh($('ndi-fresh').checked);
+
+// A local, deterministic document builder. NDI still reads the resulting text.
+const ministryDefaults = [
+  ['Finance','my savings and financial security','My emergency fund never falls below 6 months of living expenses.'],
+  ['Health','my sleep, body and mental health','I sleep at least 7 hours a night and work no more than 55 hours a week.'],
+  ['Family','time with my partner and my family','Sundays belong to my family. No work on Sundays.'],
+  ['Ambition','my career growth and the impact of my work','I choose the option where I learn fastest.','Career/Ambition'],
+  ['Adventure','curiosity, novelty and joy','Once a year I take one thoughtful bet that scares me.'],
+  ['Future Self','the skills, health and wealth of my future self','I consider the ten-year consequences before a big decision.'],
+  ['Friends','my close friendships and time together','I make time for my closest friends every week.'],
+  ['Learning','my education, curiosity and skill development','I reserve at least three hours a week for learning.'],
+  ['Faith','my spiritual commitments and practice','I protect time for my spiritual practice each week.'],
+  ['Community','my neighbours and the communities I belong to','I consider how my decisions affect my community.'],
+  ['Creativity','time and energy for making original work','I reserve two hours a week for creative work.'],
+  ['Product','the usefulness and quality of our product','We define the user problem before committing to a new feature.'],
+  ['Engineering','the reliability and maintainability of our systems','We review security and reliability before shipping.'],
+  ['Customers','the needs and trust of our customers','We validate major changes with customer evidence.'],
+  ['Legal','our legal obligations and responsible conduct','We obtain legal review before making binding commitments.'],
+  ['Budget','our budget and financial runway','We identify a funding source before approving new spending.'],
+  ['Team','the wellbeing and capacity of our team','We agree on a sustainable workload before taking on new work.']
+];
+const wizardMinistries = ministryDefaults.map(([name,protects,rule,label]) => ({name,label:label || name,protects,rule,weight:1,veto:false,scope:''}));
+const selectedMinistries = new Set([0,1,2]);
+const passageText = {simple:'a simple majority',three_fifths:'a three-fifths majority',two_thirds:'a two-thirds majority',unanimous:'a unanimous vote'};
+function renderWizard() {
+  $('ministry-choices').innerHTML = wizardMinistries.map((m,i) =>
+    (i === 11 ? '<p class="choice-group">For a team or organization</p>' : '')+
+    '<label><input type="checkbox" data-choice="'+i+'" '+(selectedMinistries.has(i)?'checked':selectedMinistries.size>=7?'disabled':'')+'> '+esc(m.label)+'</label>').join('');
+  $('wizard-count').textContent = selectedMinistries.size+' selected · choose 3–7';
+  $('ministry-fields').innerHTML = [...selectedMinistries].map(i => {
+    const m = wizardMinistries[i];
+    return '<fieldset class="ministry-editor" data-editor="'+i+'"><legend>'+esc(m.name)+'</legend>'+
+      '<label>What it protects<input data-field="protects" value="'+esc(m.protects)+'" required maxlength="500"></label>'+
+      '<div class="ministry-powers"><label>Vote weight<select data-field="weight">'+[1,2,3].map(w=>'<option '+(w===m.weight?'selected':'')+'>'+w+'</option>').join('')+'</select></label>'+
+      '<label class="check-label"><input type="checkbox" data-field="veto" '+(m.veto?'checked':'')+'> Holds a veto</label></div>'+
+      '<label class="veto-scope" '+(m.veto?'':'hidden')+'>Veto over<input data-field="scope" value="'+esc(m.scope)+'" placeholder="e.g. decisions requiring relocation" maxlength="500" '+(m.veto?'required':'disabled')+'></label>'+
+      '<label>One standing rule<input data-field="rule" value="'+esc(m.rule)+'" required maxlength="700"></label></fieldset>';
+  }).join('');
+}
+$('build-constitution').onclick = () => {
+  renderWizard();
+  $('wizard-error').hidden = true;
+  $('constitution-wizard').showModal();
+};
+$('ministry-choices').onchange = event => {
+  const input = event.target.closest('[data-choice]');
+  if (!input) return;
+  const index = +input.dataset.choice;
+  if (input.checked && selectedMinistries.size < 7) selectedMinistries.add(index);
+  else selectedMinistries.delete(index);
+  renderWizard();
+};
+$('ministry-fields').oninput = event => {
+  const input = event.target.closest('[data-field]');
+  if (!input) return;
+  const m = wizardMinistries[+input.closest('[data-editor]').dataset.editor];
+  const key = input.dataset.field;
+  m[key] = key === 'veto' ? input.checked : key === 'weight' ? +input.value : input.value;
+  if (key === 'veto') {
+    const scope = input.closest('fieldset').querySelector('.veto-scope');
+    scope.hidden = !m.veto;
+    scope.querySelector('input').disabled = !m.veto;
+    scope.querySelector('input').required = m.veto;
+  }
+};
+function wizardError(message) {
+  $('wizard-error').textContent = message;
+  $('wizard-error').hidden = false;
+}
+$('add-ministry').onclick = () => {
+  const name = $('custom-ministry').value.replace(/[\r\n]+/g,' ').trim();
+  if (!name) return wizardError('Name your custom ministry first.');
+  if (selectedMinistries.size >= 7) return wizardError('Choose at most seven ministries. Uncheck one before adding another.');
+  if (wizardMinistries.some(m => m.name.toLowerCase() === name.toLowerCase() || m.label.toLowerCase() === name.toLowerCase())) return wizardError('That ministry is already listed. Select it above.');
+  selectedMinistries.add(wizardMinistries.length);
+  wizardMinistries.push({name,label:name,protects:'my commitments to '+name,weight:1,veto:false,scope:'',rule:'I consider '+name+' before making a major decision.'});
+  $('custom-ministry').value = '';
+  $('wizard-error').hidden = true;
+  renderWizard();
+};
+$('custom-ministry').onkeydown = event => {
+  if (event.key === 'Enter') { event.preventDefault(); $('add-ministry').click(); }
+};
+$('wizard-special').onchange = () => {
+  const enabled = $('wizard-special').checked;
+  $('special-fields').hidden = !enabled;
+  $('wizard-risk').disabled = !enabled;
+  $('wizard-risk').required = enabled;
+};
+$('wizard-special').onchange();
+$('wizard-override').onchange = () => {
+  const enabled = $('wizard-override').checked;
+  $('override-fields').hidden = !enabled;
+  $('wizard-override-condition').disabled = !enabled;
+  $('wizard-override-condition').required = enabled;
+};
+$('wizard-override').onchange();
+const sentenceEnd = text => /[.!?]$/.test(text.trim()) ? text.trim() : text.trim()+'.';
+$('wizard-form').onsubmit = event => {
+  event.preventDefault();
+  if (selectedMinistries.size < 3 || selectedMinistries.size > 7) return wizardError('Choose between three and seven ministries.');
+  const ministries = [...selectedMinistries].map(i=>wizardMinistries[i]);
+  if (ministries.some(m=>!m.protects.trim() || !m.rule.trim() || (m.veto && !m.scope.trim()))) return wizardError('Complete each ministry’s protection, standing rule and any veto scope.');
+  if ($('wizard-override').checked && !$('wizard-override-condition').value.trim()) return wizardError('Give the condition for a leader override.');
+  const text = [
+    'MY CONSTITUTION', 'How I make big decisions. Edit every line to make it yours.', '',
+    'Article 1: The Ministries',
+    ...ministries.map((m,i) => '1.'+(i+1)+' Ministry of '+(m.name === 'Future Self'?'the ':'')+m.name+'. '+sentenceEnd('Protects '+m.protects.trim())+' Vote weight: '+m.weight+'. '+(m.veto?sentenceEnd('Holds a VETO over '+m.scope.trim()):'No veto.')),
+    '', 'Article 2: Standing Rules',
+    ...ministries.map((m,i) => 'Rule 2.'+(i+1)+' ('+m.name+'). '+sentenceEnd(m.rule)),
+    '', 'Article 3: Passage',
+    '3.1 A decision passes by '+passageText[$('wizard-threshold').value]+' of weighted votes.',
+    ...($('wizard-special').checked ? ['3.2 Any decision that risks more than $'+Number($('wizard-risk').value).toLocaleString('en-US',{maximumFractionDigits:2})+' needs '+passageText[$('wizard-special-threshold').value]+' of weighted votes.'] : []),
+    '', 'Article 4: The Leader',
+    $('wizard-override').checked ? '4.1 '+sentenceEnd('I may override a veto only if '+$('wizard-override-condition').value.trim()) : '4.1 I may not override a veto.'
+  ].join('\n');
+  $('const-text').value = text;
+  $('constitution').value = '';
+  samples = false;
+  $('source-status').textContent = 'Constitution built · '+ministries.length+' ministries. Review it below.';
+  $('documents').open = true;
+  $('constitution-wizard').close();
+  $('const-text').focus();
+};
+
 async function work(message, action) {
   if (busy) return;
   setBusy(true,message);
@@ -75,6 +212,22 @@ async function work(message, action) {
   finally { setBusy(false); }
 }
 
+// Constitution shelf: real documents (yours, Roman Republic, US, Japan). Picking one fills its motion; NDI reads it (cached reads are labelled).
+let shelfPick = null;
+{
+  const shelf = document.createElement('div'); shelf.id = 'shelf'; shelf.className = 'shelf';
+  shelf.innerHTML = '<p class="shelf-label">Choose a constitution</p>' + SHELF.map(s => '<button type="button" class="shelf-item" data-shelf="'+s.id+'"><strong>'+esc(s.name)+'</strong><span>'+esc(s.blurb)+'</span></button>').join('');
+  $('sample').closest('.setup-actions').before(shelf);
+  $('sample').hidden = true;
+  shelf.onclick = event => {
+    const b = event.target.closest('[data-shelf]'); if (!b) return;
+    const s = SHELF.find(x => x.id === b.dataset.shelf);
+    if (s.kind === 'pdf') $('sample').click(); else { samples = false; $('constitution').value = ''; $('evidence').value = ''; }
+    shelfPick = s; $('decision').value = s.motion;
+    shelf.querySelectorAll('.shelf-item').forEach(x => x.classList.toggle('picked', x === b));
+    $('source-status').textContent = s.name + ' selected' + (s.evidence?.length ? ' (with sample evidence)' : '');
+  };
+}
 $('sample').onclick = () => {
   samples = true;
   $('constitution').value = '';
@@ -84,11 +237,21 @@ $('sample').onclick = () => {
 };
 fetch('/samples/constitution-template.txt').then(r => r.ok ? r.text() : '').then(t => { if (!$('const-text').value) $('const-text').value = t; });
 for (const id of ['constitution','evidence','const-text','ev-urls','ev-text']) $(id).oninput = $(id).onchange = () => {
-  samples = false;
+  samples = false; shelfPick = null; document.querySelectorAll('.shelf-item.picked').forEach(x => x.classList.remove('picked'));
   $('source-status').textContent = '';
 };
 
 // job = { name, run: () => engine read call }
+function ndiReadLabel(name, parsed) {
+  const prefix = 'NDI read '+name+' · ';
+  if (parsed.cached) {
+    const time = parsed.cachedAt ? new Date(parsed.cachedAt) : null;
+    const when = time && !Number.isNaN(time.getTime()) ? ' from '+time.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',hour12:false}) : '';
+    return prefix+'cached'+when+(Number.isFinite(parsed.liveMs)?' (live read took '+(parsed.liveMs/1000).toFixed(1)+' s)':'');
+  }
+  const ms = Number.isFinite(parsed.liveMs) ? parsed.liveMs : parsed.ms;
+  return prefix+'live read'+(Number.isFinite(ms)?' · '+(ms/1000).toFixed(1)+' s':'');
+}
 async function readJob({ name, run }) {
   const line = document.createElement('div');
   $('progress').append(line);
@@ -98,7 +261,8 @@ async function readJob({ name, run }) {
   try {
     const parsed = await run();
     if (!parsed.result?.data) throw new Error('NDI returned no structured extraction for '+name);
-    line.textContent = 'NDI read '+name+' · '+(parsed.ms/1000).toFixed(1)+' s';
+    line.textContent = ndiReadLabel(name,parsed);
+    if (parsed.cachedAt) line.title = 'Cached at '+parsed.cachedAt;
     return { ...parsed, doc: name };
   } catch (error) { line.textContent = name+' · '+error.message; throw error; }
   finally { clearInterval(timer); }
@@ -117,7 +281,8 @@ async function readDoc(name, source, read) {
     }) : await source.arrayBuffer();
     const parsed = await read('',bytes,name);
     if (!parsed.result?.data) throw new Error('NDI returned no structured extraction for '+name);
-    line.textContent = 'NDI read '+name+' · '+(parsed.ms/1000).toFixed(1)+' s';
+    line.textContent = ndiReadLabel(name,parsed);
+    if (parsed.cachedAt) line.title = 'Cached at '+parsed.cachedAt;
     return parsed;
   } catch (error) {
     line.textContent = name+' · '+error.message;
@@ -125,16 +290,16 @@ async function readDoc(name, source, read) {
   } finally { clearInterval(timer); }
 }
 
+const senateLoading = createSenateLoading($('setup'),$('convene'));
+
 $('convene').onsubmit = async event => {
   event.preventDefault();
   if (busy) return;
   const decision = $('decision').value.trim();
   if (!decision) return;
-  // Drex gate: the Senate only votes on yes/no motions.
-  try { const m = await checkMotion('', decision); if (!m.ok) return showError(`Drex reads "${decision}" as an open question, not a yes/no motion (${Math.round(m.p * 100)}% votable). Rephrase it as something the Senate can vote on, e.g. "Should I spend the next year on X?"`); }
-  catch (error) { return showError(error); }
-  const constitution = samples ? '/samples/constitution.pdf' : $('constitution').files[0];
-  const evidence = samples ? ['/samples/offer-letter.pdf'] : [...$('evidence').files];
+  const webShelf = shelfPick && shelfPick.kind !== 'pdf' ? shelfPick : null;
+  const constitution = webShelf ? null : samples ? '/samples/constitution.pdf' : $('constitution').files[0];
+  const evidence = webShelf ? [...$('evidence').files] : samples ? ['/samples/offer-letter.pdf'] : [...$('evidence').files];
   const constText = $('const-text').value.trim();
   if (!constitution && !constText) return showError('Write your constitution in the box, upload a constitution PDF, or use the example.');
   const name = source => typeof source === 'string' ? source.split('/').at(-1) : source.name;
@@ -142,7 +307,8 @@ $('convene').onsubmit = async event => {
   const extraJobs = samples ? [] : [
     ...$('ev-urls').value.split(/\s+/).filter(u => /^https?:\/\//.test(u)).map(u => ({ name: u.replace(/^https?:\/\//,'').slice(0,60), run: () => readEvidenceUrl('', u) })),
     ...($('ev-text').value.trim() ? [{ name: 'pasted evidence', run: () => readEvidenceText('', $('ev-text').value.trim(), 'pasted-evidence.pdf') }] : [])];
-  const constJob = constitution ? { name: name(constitution), run: () => readDoc(name(constitution),constitution,readConstitution) }
+  const constJob = webShelf ? { name: webShelf.name + ' constitution', run: () => webShelf.kind === 'wiki' ? readConstitutionWiki('', webShelf.site, webShelf.source) : readConstitutionUrl('', webShelf.source) }
+    : constitution ? { name: name(constitution), run: () => readDoc(name(constitution),constitution,readConstitution) }
     : { name: 'my constitution (written here)', run: () => readConstitutionText('', constText) };
   const inputs = [...$('convene').querySelectorAll('button,input,textarea')];
   for (const input of inputs) input.disabled = true;
@@ -150,7 +316,13 @@ $('convene').onsubmit = async event => {
   $('progress').replaceChildren();
   $('rollcall').replaceChildren();
   $('errors').hidden = true;
+  $('setup-diagnostics').hidden = true;
+  senateLoading.show('motion');
   try {
+    const motion = await checkMotion('',decision);
+    if (!motion.ok) throw new Error(`Drex reads "${decision}" as an open question (${Math.round(motion.p*100)}% votable). Rephrase it as a yes/no motion, such as "Should I spend the next year on X?"`);
+    senateLoading.show('documents');
+    setNdiFresh($('ndi-fresh').checked);
     const results = await Promise.allSettled([
       constitution ? readDoc(name(constitution),constitution,readConstitution) : readJob(constJob),
       ...evidence.map(async doc => ({ ...(await readDoc(name(doc),doc,readEvidence)),doc:name(doc) })),
@@ -168,9 +340,7 @@ $('convene').onsubmit = async event => {
       badge.textContent = m.short+' ('+m.vote_weight+(m.vote_weight===1?' vote':' votes')+(m.has_veto ? ', veto' : '')+')'+(m.cite?.page ? ', p. '+m.cite.page : '');
       $('rollcall').append(badge);
     }
-    const opening = document.createElement('div');
-    opening.textContent = 'Drafting amendments and evaluating the opening motion…';
-    $('progress').append(opening);
+    senateLoading.show('opening');
     engine?.stopDrift();
     engine = createEngine({config,decision});
     bindEngine();
@@ -178,10 +348,14 @@ $('convene').onsubmit = async event => {
     $('motion').textContent = decision;
     $('setup').hidden = true;
     $('chamber').hidden = false;
+    setStep(2);
     renderChamber();
     engine.startDrift(3000);
-  } catch (error) { showError(error); }
-  finally {
+  } catch (error) {
+    showError(error);
+    $('setup-diagnostics').hidden = !$('progress').childElementCount;
+  } finally {
+    senateLoading.hide();
     for (const input of inputs) input.disabled = false;
     setBusy(false);
   }
@@ -195,11 +369,14 @@ function bindEngine() {
     renderMovers(sentence);
     renderChamber();
   });
-  engine.on('drift',renderDrift);
+  engine.on('coach',renderCoach);
+  engine.on('threshold',() => renderCoach());
+  engine.on('question',() => renderCoach());
+  engine.on('drift',event => { renderDrift(event); renderCoach(); });
   engine.on('face',renderFace);
-  engine.on('accepted', amendment => { $('subtitle').textContent = 'Amendment accepted · '+amendment.text; });
+  engine.on('accepted', amendment => { $('subtitle').textContent = 'Amendment accepted · '+amendment.text; renderCoach(); });
   engine.on('interrupt', playSpeech);
-  engine.on('verdict',renderVerdict);
+  engine.on('verdict',verdict => { renderCoach(); renderVerdict(verdict); });
   engine.on('oneLlm',renderOracle);
 }
 
@@ -284,14 +461,35 @@ function renderDrift({moved}) {
 function meter(value, threshold) {
   return '<div class="meter"><i style="width:'+pct(value)+'"></i><b style="left:'+pct(threshold)+'"></b></div>';
 }
+const thresholdLabel = threshold => ({simple:'Simple majority',three_fifths:'3/5 majority',two_thirds:'2/3 majority',unanimous:'Unanimous'})[threshold] || human(threshold);
+function renderCoach(coach = engine.coach()) {
+  $('goal').textContent = "Win the Senate's vote under your constitution: you need "+pct(coach.need)+' ('+coach.reason+').';
+  $('tally').innerHTML = '<div class="projection-label"><strong>'+pct(coach.projected)+' projected</strong><span>Need '+pct(coach.need)+'</span></div>'+
+    meter(coach.projected,coach.need)+'<p class="projection-note">Projected from current Drex stances, not a vote</p>'+
+    '<p class="coach-threshold">'+esc(thresholdLabel(coach.threshold))+' · '+esc(coach.yesWeight)+'/'+esc(coach.total)+' weighted votes lean for</p>';
+  const senatorChip = (m, veto = false) => {
+    // The coach returns engine minister IDs; short-name lookup also supports the documented shape.
+    const target = state().ministers.find(row=>row.id === m.id || row.short === m.short);
+    const description = veto ? m.scope+(m.demand?' · Wants: '+m.demand:'') : (m.demand || citeText(m.cite) || '')+' · stance '+m.stance.toFixed(2)+'/4';
+    return '<button type="button" class="coach-chip'+(veto?' veto-risk':'')+'" '+(target?'data-minister="'+esc(target.id)+'"':'disabled')+' title="'+esc(description)+'">'+esc(m.short)+(veto?' · veto risk':' · '+esc(m.weight)+' vote'+(m.weight===1?'':'s'))+'</button>';
+  };
+  const markup = '<ol class="coach-steps">'+coach.steps.slice(0,3).map((step,i)=>'<li>'+(i===0?'<strong>':'')+esc(step)+(i===0?'</strong>':'')+'</li>').join('')+'</ol>'+
+    (coach.vetoRisk.length ? '<div class="coach-chips" aria-label="Veto risks">'+coach.vetoRisk.map(m=>senatorChip(m,true)).join('')+'</div>' : '')+
+    (coach.persuadable.length && !coach.decided ? '<div class="coach-chips"><span>Win over</span>'+coach.persuadable.map(m=>senatorChip(m)).join('')+'</div>' : '')+
+    (coach.openConditions.length ? detail('Open amendments ('+coach.openConditions.length+')',coach.openConditions.map(c=>'<p><strong>'+esc(c.from)+'</strong> · '+esc(c.text)+'</p>').join('')+'<p class="quiet">Accept or refuse an amendment in your next address.</p>') : '')+
+    (state().accepted.length ? detail('Accepted amendments ('+state().accepted.length+')',state().accepted.map(c=>'<p><strong>'+esc(c.from)+'</strong> · '+esc(c.text)+'</p>').join('')) : '');
+  // Idle drift must not close an amendment the user is reading or steal chip focus.
+  if (markup !== lastCoachMarkup) {
+    $('coach-body').innerHTML = markup;
+    lastCoachMarkup = markup;
+  }
+  $('vote').classList.toggle('ready',coach.ready && !coach.decided);
+}
 function renderChamber() {
   if ($('chamber').hidden) return;
   const s = state();
-  const weight = s.ministers.reduce((total,m) => total + m.weight,0);
-  const support = s.ministers.reduce((total,m) => total + m.weight*m.stance,0)/(4*weight);
-  const threshold = s.config.passage.default_threshold;
-  $('tally').innerHTML = '<span>Weighted stance <strong>'+pct(support)+'</strong></span>'+meter(support,thresholds[threshold])+
-    '<small>Default threshold: '+esc(human(threshold))+page(s.config.passageCite)+'</small>';
+  $('intro-caucus').textContent = s.members.length;
+  renderCoach();
   $('chamber').classList.toggle('has-speaker', Boolean(liveSpeech));
   const counts = caucusCounts(s.members);
   const markup = s.ministers.map(m => card(m,counts.get(m.id)));
@@ -727,12 +925,14 @@ window.addEventListener('pagehide',()=>{
 });
 
 $('vote').onclick = () => work('Drex tallying the division…',async()=>{
+  setStep(3);
   engine.stopDrift();
   try { await engine.vote(); }
-  catch (error) { engine.startDrift(3000); throw error; }
+  catch (error) { setStep(2); engine.startDrift(3000); throw error; }
 });
 
 function renderVerdict(v) {
+  setStep(3);
   engine.stopDrift();
   stopMic();
   stopCamera();
@@ -742,7 +942,8 @@ function renderVerdict(v) {
   const special = v.specials?.find(row=>row.condition===v.thresholdReason && row.threshold===v.threshold);
   const comparison = '<button id="oracle-button">Ask one LLM</button><div id="oracle-result" aria-live="polite"></div>';
   $('division').innerHTML =
-    '<section class="verdict-card"><p class="division-label">The division</p><h2 class="verdict-title">'+(v.passed?'Senatus Consultum':'Motio Reiecta')+'</h2>'+
+    '<section class="verdict-card"><p class="division-label">The division · complete</p><h2 class="verdict-title">'+(v.passed?'Senatus Consultum':'Motio Reiecta')+'</h2>'+
+    '<p class="division-outcome">'+(v.passed?'The motion carried. Review the conditions you committed to below.':'The motion failed. Review the votes and vetoes below to see why.')+'</p>'+
     '<p>'+esc(s.decision)+'</p><div class="totals"><span><strong>'+esc(v.yes)+'</strong> AYES</span><span><strong>'+esc(v.total-v.yes)+'</strong> NOES</span></div>'+
     meter(v.share,thresholds[v.threshold])+'<p>'+pct(v.share)+' weighted ayes · '+esc(human(v.threshold))+' required</p>'+
     '<p class="meta">'+esc(v.thresholdReason)+ (special ? ' · Drex '+pct(special.appliesP)+page(special.cite) : page(s.config.passageCite))+'</p>'+

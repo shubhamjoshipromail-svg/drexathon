@@ -78,6 +78,19 @@ async function ndiUploadExtract(raw, name, schema) {
     source: { type: 'workspace_file', workspace_id: file.workspace_id ?? grant.workspace_id, file_id: file.file_id }, schema }) })).json();
 }
 
+// NDI cache (user-approved shortcut, 14:00): the same document + schema returns the earlier NDI result instantly,
+// marked cached:true + cachedAt so the UI says so. Send fresh:true to force a live read.
+import crypto from 'node:crypto';
+const CACHE = path.join(ROOT, 'cache', 'ndi');
+const cacheKey = (kind, payload, schema) => crypto.createHash('sha256').update(kind + '\0' + payload + '\0' + JSON.stringify(schema)).digest('hex').slice(0, 32);
+async function cachedNdi(key, fresh, fn) {
+  const f = path.join(CACHE, key + '.json');
+  if (!fresh) { try { const c = JSON.parse(fs.readFileSync(f, 'utf8')); return { ...c.body, cached: true, cachedAt: c.at, liveMs: c.liveMs }; } catch {} }
+  const t = performance.now(); const body = await fn(); const liveMs = Math.round(performance.now() - t);
+  if (body.extract?.status === 'succeeded') { fs.mkdirSync(CACHE, { recursive: true }); fs.writeFileSync(f, JSON.stringify({ at: new Date().toISOString(), liveMs, body })); }
+  return { ...body, cached: false, liveMs };
+}
+
 const routes = {
   // Drex System One. Body: {model?, state, questions, images?}
   '/api/drex': (req, res, body) => {
@@ -91,7 +104,7 @@ const routes = {
   '/api/ndi/doc': async (req, res, body) => {
     const j = JSON.parse(body);
     const t0 = performance.now();
-    try { send(res, 200, { ms: Math.round(performance.now() - t0), extract: await ndiUploadExtract(Buffer.from(j.pdf_b64, 'base64'), j.name || 'doc.pdf', j.schema), ms_total: Math.round(performance.now() - t0) }); }
+    try { send(res, 200, await cachedNdi(cacheKey('pdf', j.pdf_b64, j.schema), j.fresh, async () => ({ extract: await ndiUploadExtract(Buffer.from(j.pdf_b64, 'base64'), j.name || 'doc.pdf', j.schema) }))); }
     catch (e) { send(res, 502, { error: String(e.message || e), detail: e.detail }); }
   },
   // Field manual (archived Shout Command): raw PDF bytes in -> NDI upload -> extract doctrine rules with page citations.
@@ -151,18 +164,33 @@ const routes = {
   // NDI on text the user wrote/pasted: render it to a plain PDF here, then NDI reads it like any document.
   '/api/ndi/text': async (req, res, body) => {
     const j = JSON.parse(body); const t0 = performance.now();
-    try { send(res, 200, { extract: await ndiUploadExtract(textToPdf(j.text), j.name || 'text.pdf', j.schema), ms_total: Math.round(performance.now() - t0) }); }
+    try { send(res, 200, await cachedNdi(cacheKey('text', j.text, j.schema), j.fresh, async () => ({ extract: await ndiUploadExtract(textToPdf(j.text), j.name || 'text.pdf', j.schema) }))); }
     catch (e) { send(res, 502, { error: String(e.message || e), detail: e.detail }); }
+  },
+  // NDI on a Wikipedia/Wikisource article: plain text via the official MediaWiki API (their HTML refuses NDI's fetcher),
+  // rendered to PDF, then NDI reads it. Body: {site: 'en.wikipedia.org', title, schema, fresh}
+  '/api/ndi/wiki': async (req, res, body) => {
+    const j = JSON.parse(body);
+    try {
+      const site = /^[a-z.]+\.(wikipedia|wikisource)\.org$/.test(j.site) ? j.site : 'en.wikipedia.org';
+      const api = `https://${site}/w/api.php?action=query&prop=extracts&explaintext=1&format=json&redirects=1&titles=${encodeURIComponent(j.title)}`;
+      const page = Object.values((await (await fetch(api, { headers: { 'User-Agent': 'SenateOfYou-hackathon/0.1 (educational demo)' } })).json()).query.pages)[0];
+      if (!page?.extract) throw new Error(`no text for ${j.title} on ${site}`);
+      const text = `${page.title}\nSource: https://${site}/wiki/${encodeURIComponent(page.title.replace(/ /g, '_'))} (CC BY-SA)\n\n${page.extract.replace(/\n{3,}/g, '\n\n')}`;
+      send(res, 200, { ...(await cachedNdi(cacheKey('wiki', site + '/' + j.title, j.schema), j.fresh, async () => ({ extract: await ndiUploadExtract(textToPdf(text), (j.title.replace(/\W+/g, '-') + '.pdf'), j.schema) }))), chars: text.length });
+    } catch (e) { send(res, 502, { error: String(e.message || e) }); }
   },
   // NDI on a web link (job post, listing, article, public doc).
   '/api/ndi/url': async (req, res, body) => {
     const j = JSON.parse(body); const t0 = performance.now();
     const name = (new URL(j.url).pathname.split('/').filter(Boolean).pop() || new URL(j.url).hostname).replace(/[^\w.-]/g, '_').slice(0, 60) + (/\.\w{2,4}$/.test(j.url) ? '' : '.html');
-    const r = await fetchBackoff('https://console.nace.ai/v1/documents/extract?wait_seconds=120', { method: 'POST', headers: { Authorization: `Bearer ${env().NACE_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ source: { type: 'url', url: j.url, file_name: name }, schema: j.schema }) });
-    const text = await r.text();
-    try { send(res, r.status, { extract: JSON.parse(text), ms_total: Math.round(performance.now() - t0) }); }
-    catch { send(res, 502, { error: `NDI url HTTP ${r.status}: ${text.slice(0, 120)}` }); }
+    try {
+      send(res, 200, await cachedNdi(cacheKey('url', j.url, j.schema), j.fresh, async () => {
+        const r = await fetchBackoff('https://console.nace.ai/v1/documents/extract?wait_seconds=120', { method: 'POST', headers: { Authorization: `Bearer ${env().NACE_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source: { type: 'url', url: j.url, file_name: name }, schema: j.schema }) });
+        const text = await r.text(); try { return { extract: JSON.parse(text) }; } catch { throw new Error(`NDI url HTTP ${r.status}: ${text.slice(0, 120)}`); }
+      }));
+    } catch (e) { send(res, 502, { error: String(e.message || e) }); }
   },
 };
 

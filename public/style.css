@@ -77,3 +77,54 @@ h1,h2,h3,p{margin:0}h1,h2,h3{font-family:var(--serif)}button,input,textarea{font
 .caucus-card{color:var(--muted);font:14px/1.25 Inter,sans-serif;margin-top:6px}
 @media(max-width:550px){#movers{width:46%;max-height:37%;bottom:36px}}
 #camera-crop{display:block;width:100%;height:100%;object-fit:cover}
+
+/* The guide stays in view through setup, debate and the final division. */
+.step-guide{position:sticky;top:0;z-index:6;background:#1b1714f5;border-bottom:1px solid var(--line);padding:10px 20px;backdrop-filter:blur(10px)}
+.step-guide ol{display:flex;justify-content:center;align-items:center;gap:24px;list-style:none;margin:0;padding:0;color:var(--muted);font-size:13px}
+.step-guide li{display:flex;align-items:center;gap:7px}.step-guide li+li:before{content:'→';color:#817466;margin-right:14px}
+.step-guide li span{display:grid;place-items:center;width:23px;height:23px;border:1px solid var(--line);border-radius:50%;font-variant-numeric:tabular-nums}
+.step-guide [aria-current=step]{color:var(--gold);font-weight:700}.step-guide [aria-current=step] span{background:var(--gold);border-color:var(--gold);color:#24170f}.step-guide .complete span{border-color:var(--gold);color:var(--gold)}
+#setup{min-height:calc(100dvh - 100px)}.setup-card{max-width:650px}
+.setup-help{color:var(--muted);font-size:12px;line-height:1.5;margin:12px 0 16px}
+.check-label,.setup-card .check-label{display:flex;align-items:center;gap:8px;font-size:13px}.check-label input[type=checkbox]{width:16px;height:16px;margin:0;accent-color:var(--gold);flex-shrink:0}
+#chamber{height:auto;min-height:calc(100dvh - 100px);grid-template-rows:auto minmax(430px,1fr) 90px}
+.motion{grid-template-columns:minmax(0,1fr) minmax(300px,41%);align-items:start;gap:25px;padding-bottom:15px}
+#goal{color:var(--gold);font-size:14px;line-height:1.5;margin-top:12px;max-width:650px}
+.chamber-intro{font-size:13px;line-height:1.5;border-left:2px solid var(--gold);padding:2px 0 2px 12px;margin-top:15px;color:var(--muted)}.chamber-intro p+p{margin-top:4px}.chamber-intro button{float:right;margin:0 0 6px 10px;font-size:12px}
+#coach{padding:12px 14px;border:1px solid var(--line);background:var(--panel);border-radius:5px;min-width:0}#coach h3{font:700 15px Inter,sans-serif;margin-bottom:10px}
+.projection-label{display:flex;justify-content:space-between;gap:10px;font-size:13px}.projection-label strong{color:var(--gold)}.projection-label span{color:var(--muted)}
+.projection-note,.coach-threshold{font-size:11px;color:var(--muted);line-height:1.4}.coach-threshold{margin-top:3px}
+#coach .meter{margin:8px 1px}
+.coach-steps{padding-left:20px;margin:10px 0;font-size:12px;line-height:1.45}.coach-steps li+li{margin-top:5px}
+.coach-chips{display:flex;align-items:center;flex-wrap:wrap;gap:5px;font-size:11px;margin-top:7px}.coach-chips>span{color:var(--muted);margin-right:3px}
+.coach-chip{font-size:11px;padding:4px 7px;text-align:left}.veto-risk{background:#51272a;color:#ffd0d0;border-color:#a6555a}
+#coach details{padding:6px 8px;font-size:12px;line-height:1.4}#coach details p{margin-top:7px}
+#vote.ready{box-shadow:0 0 0 2px #e3b97666,0 0 20px #e3b9764d;animation:ready-glow 2s ease-in-out infinite}
+@keyframes ready-glow{50%{box-shadow:0 0 0 3px #e3b97699,0 0 27px #e3b97680}}
+.division-outcome{color:var(--gold);font-weight:600}
+/* One builder, with all choices and their editable rules together. */
+#constitution-wizard{width:min(900px,95vw);max-height:90dvh}#wizard-title{font:700 22px Inter,sans-serif}
+#wizard-form>p{color:var(--muted);line-height:1.5;margin:6px 0 18px}
+#wizard-form fieldset{min-width:0;border:1px solid var(--line);border-radius:5px;padding:13px;margin:0 0 14px}#wizard-form legend{font-weight:600;color:var(--gold);padding:0 6px}
+#ministry-choices{display:flex;gap:9px 16px;flex-wrap:wrap}#ministry-choices label{display:flex;align-items:center;gap:5px;font-size:13px}#ministry-choices input{accent-color:var(--gold)}
+.choice-group{flex-basis:100%;font-size:12px;color:var(--muted);margin-top:4px}
+.custom-ministry{display:flex;gap:8px;margin-top:14px}.custom-ministry input{flex:1;min-width:0}#wizard-count{font-size:12px;color:var(--muted);margin-top:10px}
+#ministry-fields{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.ministry-editor label,.wizard-passage>label:not(.check-label){display:grid;gap:6px;font-size:12px;margin:5px 0 12px}.ministry-editor input{width:100%;font-size:13px;padding:8px}
+.ministry-powers{display:flex;align-items:center;justify-content:space-between;gap:10px}.ministry-editor .check-label{display:flex;font-size:12px}
+select{font:inherit;background:#140e0c;color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:7px}select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.wizard-passage .check-label{margin:14px 0 10px}.wizard-passage>select{width:100%}#special-fields{display:flex;gap:9px;flex-wrap:wrap;align-items:center;font-size:13px}#wizard-risk{width:120px}#wizard-override-condition{width:100%}
+#wizard-error{color:#ffb8b8!important}.wizard-footer{display:flex;align-items:center;gap:12px;position:sticky;bottom:-18px;background:#251b17;border-top:1px solid var(--line);padding:13px 0 8px}.wizard-footer span{color:var(--muted);font-size:12px}
+@media(max-width:849px){#chamber{grid-template-rows:auto auto auto}.motion{grid-template-columns:1fr;gap:16px}.floor{min-height:0}.step-guide ol{gap:12px;font-size:11px}.step-guide li+li:before{margin-right:4px}.step-guide{padding:9px 10px}}
+@media(max-width:550px){.step-guide ol{gap:7px}.step-guide li{gap:4px;flex:1}.step-guide li+li:before{content:none}.step-guide li span{width:20px;height:20px;flex-shrink:0}.setup-card{padding:22px}.setup-card h2{font-size:29px}#ministry-fields{grid-template-columns:1fr}.custom-ministry,.wizard-footer{flex-wrap:wrap}.motion h2{font-size:23px}}
+@media(prefers-reduced-motion:reduce){#vote.ready{animation:none}}
+
+/* Constitution shelf */
+.shelf { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0 6px; }
+.shelf-label { grid-column: 1 / -1; margin: 0; font-weight: 600; }
+.shelf-item { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(200,160,100,.25); background: rgba(255,255,255,.03); color: inherit; cursor: pointer; }
+.shelf-item strong { font-size: 1.05rem; }
+.shelf-item span { font-size: .85rem; opacity: .75; line-height: 1.35; }
+.shelf-item:hover { border-color: rgba(200,160,100,.6); }
+.shelf-item.picked { border-color: #e2b764; background: rgba(226,183,100,.12); }
+@media (max-width: 640px) { .shelf { grid-template-columns: 1fr; } }
