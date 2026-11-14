@@ -561,7 +561,7 @@ async function initializeFaceCrop(cameraStream) {
   const ctx = canvas.getContext('2d');
   let crop, target, lastCheck = -Infinity, lastFace = -Infinity;
   let detector;
-  $('tracking-status').textContent = 'Centering…';
+  delete canvas.dataset.faceCentered;
   const paint = now => {
     if (stream !== cameraStream) return;
     cameraAnimation = requestAnimationFrame(paint);
@@ -573,20 +573,20 @@ async function initializeFaceCrop(cameraStream) {
         const boxes = detector.detectForVideo(video,now).detections.map(d => d.boundingBox).filter(Boolean);
         const box = boxes.reduce((largest,b) => !largest || b.width*b.height>largest.width*largest.height ? b : largest,null);
         if (box) {
-          target = {x:box.originX+box.width/2,y:box.originY+box.height*.51,h:Math.max(box.height*1.32,box.width*1.12/aspect)};
+          target = {x:box.originX+box.width/2,y:box.originY+box.height*.51,h:Math.max(box.height*1.04,box.width*1.02/aspect)};
           lastFace = now;
         }
       } catch {
         detector = null;
-        $('tracking-status').textContent = 'Manual framing';
       }
     }
     const tracked = detector && target && now-lastFace<950;
-    if (detector) $('tracking-status').textContent = tracked ? 'Face centered' : 'Look toward camera';
-    const fit = tracked ? target : {x:w/2,y:h*.45,h:h*.49};
+    if (tracked) canvas.dataset.faceCentered = '';
+    else delete canvas.dataset.faceCentered;
+    const fit = tracked ? target : {x:w/2,y:h*.45,h:h*.36};
     const eased = crop ||= {...fit};
     for (const key of ['x','y','h']) eased[key] += (fit[key]-eased[key])*.19;
-    const height = clamp(eased.h/Number($('face-zoom').value),24,Math.min(h,w/aspect));
+    const height = clamp(eased.h,48,Math.min(h,w/aspect));
     const width = height*aspect;
     const x = clamp(eased.x-width/2,0,w-width);
     const y = clamp(eased.y-height/2,0,h-height);
@@ -604,8 +604,8 @@ async function initializeFaceCrop(cameraStream) {
     })().catch(error => { faceDetector = null; throw error; });
     const ready = await faceDetector;
     if (stream === cameraStream) detector = ready;
-  } catch {
-    if (stream === cameraStream) $('tracking-status').textContent = 'Manual framing';
+  } catch (error) {
+    console.warn('Automatic face detection unavailable',error);
   }
 }
 
@@ -615,7 +615,6 @@ function stopCamera() {
   $('camera').srcObject = null;
   cancelAnimationFrame(cameraAnimation);
   $('camera-crop').hidden = true;
-  $('framing').hidden = true;
   $('bust').hidden = false;
   $('cam').textContent = 'Camera off';
   $('cam').setAttribute('aria-pressed','false');
@@ -636,7 +635,6 @@ $('cam').onclick = async () => {
     await $('camera').play();
     if (stream !== cameraStream) return;
     $('camera-crop').hidden = false;
-    $('framing').hidden = false;
     void initializeFaceCrop(stream);
     $('bust').hidden = true;
     $('cam').textContent = 'Camera on';

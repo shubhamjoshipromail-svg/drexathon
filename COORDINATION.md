@@ -8,6 +8,7 @@
 
 ## Log
 <!-- newest at top: YYYY-MM-DD HH:MM | agent | WORKING/DONE | files | note -->
+2026-11-14 14:00 | codex | DONE | public/index.html, public/view.js, public/style.css | Removed the zoom slider and tightened automatic face framing; verified with an off-centre test stream in the live chamber.
 2026-11-14 13:53 | codex | DONE | public/index.html, public/view.js, public/style.css | Added live movers and gold rings, idle drift chatter, Acta hint, caucus counts and local Caesar face crop; verified three live example addresses, idle drift, audit, face centering and verdict.
 2026-11-14 13:47 | codex | DONE | public/index.html, public/view.js, public/style.css, public/assets/ | Simplified chamber, generated Caesar poses, synced portraits to live ElevenLabs audio, added seat and verdict animations and caucus feedback; example verified through vote and oracle, with intermittent engine condition JSON errors.
 2026-11-14 13:38 | claude (cabinet build) | DONE | public/engine.js, public/view.js, experiments/test_split.mjs | Caucus members get a personal stake -> within-ministry spread 2-5x (Finance sd 0.05->0.16, Family 0.09->0.26). Seats use continuous colour. DeepInfra live (thinking off, 1.1 s).

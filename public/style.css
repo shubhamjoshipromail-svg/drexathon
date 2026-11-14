@@ -77,6 +77,3 @@ h1,h2,h3,p{margin:0}h1,h2,h3{font-family:var(--serif)}button,input,textarea{font
 .caucus-card{color:var(--muted);font:14px/1.25 Inter,sans-serif;margin-top:6px}
 @media(max-width:550px){#movers{width:46%;max-height:37%;bottom:36px}}
 #camera-crop{display:block;width:100%;height:100%;object-fit:cover}
-#framing{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:11px;min-height:18px}
-#face-zoom{width:58px;accent-color:var(--gold);margin:0}
-#tracking-status{min-width:79px;text-align:left}
