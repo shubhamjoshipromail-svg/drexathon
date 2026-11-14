@@ -42,7 +42,7 @@
 </form>
 </main>
 <main id="chamber" hidden>
-<section class="motion"><div><h2 id="motion"></h2><p id="goal"></p>
+<section class="motion"><div><h2 id="motion"></h2><p id="bill" class="bill"></p><p id="goal"></p>
 <aside id="chamber-intro" class="chamber-intro"><button type="button" id="dismiss-intro" aria-label="Dismiss introduction">Got it</button>
 <p>You are the Consul. Your constitution formed this Senate.</p>
 <p>Argue out loud: after every sentence every senator and <span id="intro-caucus"></span> caucus members decide via Drex.</p>
@@ -61,6 +61,7 @@
 <ul id="mover-list"></ul>
 </section>
 <div class="rostrum">
+<div id="turn" class="turn" role="status" aria-live="polite"></div>
 <div class="caesar">
 <img class="caesar-rest" src="./assets/consul-body.png" alt="">
 <img class="caesar-address" src="./assets/consul-body-speaking.png" alt="">

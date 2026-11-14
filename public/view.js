@@ -63,10 +63,29 @@ function showError(error) {
   box.hidden = false;
 }
 
+// Whose turn is it? One always-visible line at the rostrum: your turn / the Senate deliberates / a senator asks you.
+function renderTurn() {
+  if (!engine || $('chamber').hidden) return;
+  const s = state(), q = s.openQuestion, el = $('turn');
+  const deliberating = busy && !$('division').hidden === false && $('live-status').textContent.includes('address');
+  if (deliberating) { el.className = 'turn deliberating'; el.innerHTML = '<strong>The Senate deliberates</strong><span>'+s.ministers.length+' senators and '+s.members.length+' caucus members are deciding via Drex…</span>'; }
+  else if (q) { el.className = 'turn question'; el.innerHTML = '<strong>'+esc(q.short)+' asks you</strong><span>“'+esc(q.text)+'”</span><em>Answer out loud (hold Space) or type below. The vote waits for your answer.</em>'; }
+  else { const c = engine.coach(); el.className = 'turn yours'+(c.ready?' ready':''); el.innerHTML = '<strong>Your turn</strong><span>'+(c.ready ? 'You likely have the votes. Keep arguing, or divide the Senate.' : 'Make your case: reasons, trades, fears. Speak (hold Space) or type.')+'</span>'; }
+  // Code rule: the Senate does not divide while a senator is waiting for your answer.
+  $('vote').disabled = busy || !!q;
+  $('vote').title = q ? q.short+' is waiting for your answer' : '';
+  renderBill();
+}
+// The bill as a living document: the motion plus every amendment the Consul accepted (Drex-detected).
+function renderBill() {
+  const acc = state().accepted;
+  $('bill').innerHTML = acc.length ? '<span class="bill-label">The bill as amended:</span> '+esc(state().decision)+' <em>provided that</em> '+acc.map(c=>'<mark title="accepted at address '+esc(c.at)+'">'+esc(c.text.replace(/\.$/,''))+' <small>('+esc(c.from)+')</small></mark>').join('; ')+'.' : '<span class="bill-label">No amendments yet.</span> Senators propose them; accept one by saying so.';
+}
 function setBusy(value, message = '') {
   busy = value;
   $('live-status').textContent = message;
   $('vote').disabled = value;
+  queueMicrotask(renderTurn);
   $('address').querySelector('button').disabled = value;
   $('mic').disabled = value || !recognition;
 }
@@ -463,6 +482,7 @@ function meter(value, threshold) {
 }
 const thresholdLabel = threshold => ({simple:'Simple majority',three_fifths:'3/5 majority',two_thirds:'2/3 majority',unanimous:'Unanimous'})[threshold] || human(threshold);
 function renderCoach(coach = engine.coach()) {
+  queueMicrotask(renderTurn);
   $('goal').textContent = "Win the Senate's vote under your constitution: you need "+pct(coach.need)+' ('+coach.reason+').';
   $('tally').innerHTML = '<div class="projection-label"><strong>'+pct(coach.projected)+' projected</strong><span>Need '+pct(coach.need)+'</span></div>'+
     meter(coach.projected,coach.need)+'<p class="projection-note">Projected from current Drex stances, not a vote</p>'+
@@ -924,7 +944,7 @@ window.addEventListener('pagehide',()=>{
   stopCamera();
 });
 
-$('vote').onclick = () => work('Drex tallying the division…',async()=>{
+$('vote').onclick = () => state().openQuestion ? showError(state().openQuestion.short+' is waiting for your answer before the Senate can divide.') : work('Drex tallying the division…',async()=>{
   setStep(3);
   engine.stopDrift();
   try { await engine.vote(); }

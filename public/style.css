@@ -128,3 +128,19 @@ select{font:inherit;background:#140e0c;color:var(--ink);border:1px solid var(--l
 .shelf-item:hover { border-color: rgba(200,160,100,.6); }
 .shelf-item.picked { border-color: #e2b764; background: rgba(226,183,100,.12); }
 @media (max-width: 640px) { .shelf { grid-template-columns: 1fr; } }
+
+/* Turn banner + living bill */
+.turn { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; margin: 0 auto 12px; padding: 12px 18px; max-width: 560px; border-radius: 10px; border: 1px solid rgba(226,183,100,.35); background: rgba(20,14,10,.75); }
+.turn strong { font-size: 1.15rem; letter-spacing: .02em; }
+.turn span { font-size: 1rem; opacity: .9; }
+.turn em { font-size: .85rem; opacity: .7; font-style: normal; }
+.turn.question { border-color: #e2b764; box-shadow: 0 0 0 3px rgba(226,183,100,.18); }
+.turn.question span { font-size: 1.1rem; }
+.turn.deliberating strong::after { content: ''; display: inline-block; width: 8px; height: 8px; margin-left: 8px; border-radius: 50%; background: #e2b764; animation: turnpulse 1s ease-in-out infinite; vertical-align: middle; }
+.turn.ready { border-color: #58a169; }
+@keyframes turnpulse { 50% { opacity: .2; transform: scale(.6); } }
+.bill { margin: 6px 0 4px; font-size: 1rem; line-height: 1.45; opacity: .9; }
+.bill-label { opacity: .7; }
+.bill mark { background: rgba(226,183,100,.18); color: inherit; padding: 1px 4px; border-radius: 3px; }
+.bill small { opacity: .7; }
+@media (prefers-reduced-motion: reduce) { .turn.deliberating strong::after { animation: none; } }
