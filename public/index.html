@@ -38,14 +38,24 @@
 <section class="floor">
 <div class="senators" id="left"></div>
 <div class="arena">
-<canvas id="seats" aria-label="Senate caucus seats by ministry and support"></canvas><div id="rim"></div>
+<canvas id="seats" aria-label="Senate caucus seats by ministry and support"></canvas><div class="arena-notes">
+<div id="rim"></div>
+<p id="drift-chatter" role="status"></p>
+<p id="audit-hint">Click any seat or senator to see exactly what Drex was asked and answered.</p>
+</div>
+<section id="movers" aria-labelledby="movers-title" hidden>
+<h3 id="movers-title">Who you moved</h3>
+<ul id="mover-list"></ul>
+</section>
 <div class="rostrum">
 <div class="caesar">
 <img class="caesar-rest" src="./assets/consul-body.png" alt="">
 <img class="caesar-address" src="./assets/consul-body-speaking.png" alt="">
-<div class="oval"><span id="bust" aria-hidden="true"></span><video id="camera" muted autoplay playsinline hidden></video></div>
+<div class="oval"><span id="bust" aria-hidden="true"></span><canvas id="camera-crop" width="128" height="160" aria-label="Framed camera preview" hidden></canvas></div>
 </div>
+<video id="camera" muted autoplay playsinline hidden></video>
 <div class="consul"><strong>Consul</strong><button id="cam" type="button" aria-pressed="false">Camera off</button></div>
+<label id="framing" hidden>Face zoom <input id="face-zoom" type="range" min="0.65" max="1.65" value="1" step="0.05"><span id="tracking-status"></span></label>
 <div id="face" aria-live="polite"></div>
 <div class="speak"><button id="mic" type="button" aria-pressed="false">Hold Space to speak</button></div>
 <div id="subtitle" aria-live="polite"></div>

@@ -63,3 +63,20 @@ h1,h2,h3,p{margin:0}h1,h2,h3{font-family:var(--serif)}button,input,textarea{font
 .verdict-title{text-transform:uppercase}
 #rim span{display:inline-flex;gap:5px;align-items:center}#rim span i{width:8px;height:5px;border-radius:1px}
 .caucus-defied{display:block;color:var(--gold);margin-top:3px}
+
+.arena-notes{text-align:center;color:var(--muted);font-size:12px;line-height:1.3;min-height:46px}
+#drift-chatter{min-height:1.3em;color:#dacbb6}
+#audit-hint{margin:2px 8px 0}
+#movers{position:absolute;bottom:9px;left:8px;width:min(251px,36%);max-height:47%;overflow:auto;z-index:4;background:#241d18f5;border:1px solid var(--line);border-radius:4px;padding:8px}
+#movers h3{font:650 13px Inter,sans-serif;margin-bottom:5px}
+#mover-list{padding:0;margin:0;list-style:none}
+#mover-list li+li{border-top:1px solid var(--line)}
+#mover-list button{width:100%;border:0;text-align:left;background:none;display:grid;grid-template-columns:7px 1fr;gap:3px 6px;padding:5px 2px;font-size:12px;line-height:1.2}
+#mover-list i{width:7px;height:7px;border-radius:50%;margin-top:3px}
+.mover-delta{grid-column:2;color:var(--gold);font-variant-numeric:tabular-nums}.mover-delta span{margin-left:4px;color:var(--muted)}
+.caucus-card{color:var(--muted);font:14px/1.25 Inter,sans-serif;margin-top:6px}
+@media(max-width:550px){#movers{width:46%;max-height:37%;bottom:36px}}
+#camera-crop{display:block;width:100%;height:100%;object-fit:cover}
+#framing{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:11px;min-height:18px}
+#face-zoom{width:58px;accent-color:var(--gold);margin:0}
+#tracking-status{min-width:79px;text-align:left}

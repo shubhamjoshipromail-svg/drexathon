@@ -1,4 +1,4 @@
-import { readConstitution, readEvidence, readConstitutionText, readEvidenceText, readEvidenceUrl, buildConfig, createEngine, LEVELS, speakLine } from './engine.js';
+import { checkMotion, readConstitution, readEvidence, readConstitutionText, readEvidenceText, readEvidenceUrl, buildConfig, createEngine, LEVELS, speakLine } from './engine.js';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -21,6 +21,8 @@ let liveSpeech, seatPositions = [], animation, seatFocus = 0;
 let audioContext, currentAudio, audioAnimation;
 let speechQueue = Promise.resolve();
 let rippleStart = -Infinity;
+let moverTimer, driftTimer;
+const highlightedSeats = new Set();
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const state = () => engine.state;
 const minister = id => state().ministers.find(m => m.id === id);
@@ -128,6 +130,9 @@ $('convene').onsubmit = async event => {
   if (busy) return;
   const decision = $('decision').value.trim();
   if (!decision) return;
+  // Drex gate: the Senate only votes on yes/no motions.
+  try { const m = await checkMotion('', decision); if (!m.ok) return showError(`Drex reads "${decision}" as an open question, not a yes/no motion (${Math.round(m.p * 100)}% votable). Rephrase it as something the Senate can vote on, e.g. "Should I spend the next year on X?"`); }
+  catch (error) { return showError(error); }
   const constitution = samples ? '/samples/constitution.pdf' : $('constitution').files[0];
   const evidence = samples ? ['/samples/offer-letter.pdf'] : [...$('evidence').files];
   const constText = $('const-text').value.trim();
@@ -185,16 +190,95 @@ $('convene').onsubmit = async event => {
 function bindEngine() {
   engine.on('drex', row => { $('ticker').textContent = 'Drex: '+row.n+' decisions in '+(row.ms/1000).toFixed(2)+' s'; });
   engine.on('error',showError);
-  engine.on('sentence',() => {
+  engine.on('sentence',sentence => {
     rippleStart = performance.now();
+    renderMovers(sentence);
     renderChamber();
   });
-  engine.on('drift',drawSeats);
+  engine.on('drift',renderDrift);
   engine.on('face',renderFace);
   engine.on('accepted', amendment => { $('subtitle').textContent = 'Amendment accepted · '+amendment.text; });
   engine.on('interrupt', playSpeech);
   engine.on('verdict',renderVerdict);
   engine.on('oneLlm',renderOracle);
+}
+
+function renderMovers(sentence) {
+  clearTimeout(moverTimer);
+  highlightedSeats.clear();
+  const movers = state().members.flatMap(member => {
+    const history = member.history || [];
+    const index = history.findLastIndex(row => row.src === 'sentence' && row.at === sentence.i);
+    if (index < 1) return [];
+    const before = history[index-1].support;
+    const after = history[index].support;
+    return before === after ? [] : [{member,before,after,delta:after-before}];
+  }).sort((a,b) => Math.abs(b.delta)-Math.abs(a.delta)).slice(0,3);
+  $('movers').hidden = !movers.length;
+  $('mover-list').replaceChildren();
+  for (const {member,before,after,delta} of movers) {
+    const m = minister(member.ministry);
+    const description = member.temper && member.lens && member.stake
+      ? (/^[aeiou]/i.test(member.temper)?'An ':'A ')+member.temper+' '+m.short+' member who '+member.lens+' and '+member.stake
+      : m.short+' member: '+member.traits;
+    const direction = delta > 0 ? 'came round' : 'turned against';
+    highlightedSeats.add(member.id);
+    const item = document.createElement('li');
+    item.innerHTML = '<button type="button" data-member="'+esc(member.id)+'"><i aria-hidden="true" style="background:'+color(m)+'"></i>'+
+      '<span>'+esc(description)+'</span><span class="mover-delta">'+before.toFixed(1)+' → '+after.toFixed(1)+' <span>'+direction+'</span></span></button>';
+    item.firstElementChild.onclick = () => auditSeat(member);
+    $('mover-list').append(item);
+  }
+  if (movers.length) moverTimer = setTimeout(() => {
+    $('movers').hidden = true;
+    highlightedSeats.clear();
+    drawSeats();
+  },6000);
+}
+
+function caucusCounts(members) {
+  const counts = new Map();
+  for (const {ministry,support} of members) {
+    if (!counts.has(ministry)) counts.set(ministry,{n:0,for:0,against:0});
+    const c = counts.get(ministry);
+    c.n++;
+    if (support < 1.5) c.against++;
+    if (support > 2.5) c.for++;
+  }
+  return counts;
+}
+
+function caucusLine(c) {
+  if (!c) return '';
+  if (c.for === c.against) return c.for ? 'Caucus split: '+c.for+'/'+c.n+' each way' : 'Caucus: '+c.n+' undecided';
+  const lean = c.for > c.against ? 'for' : 'against';
+  return 'Caucus: '+c[lean]+'/'+c.n+' '+lean;
+}
+
+function renderDrift({moved}) {
+  const members = state().members;
+  const groups = new Map();
+  const byId = new Map(members.map(m => [m.id,m]));
+  for (const {id,d} of moved) {
+    if (Math.abs(d) < .3 || !byId.has(id)) continue;
+    const {ministry} = byId.get(id);
+    if (!groups.has(ministry)) groups.set(ministry,{toward:0,away:0});
+    groups.get(ministry)[d>0?'toward':'away']++;
+  }
+  const biggest = [...groups].sort((a,b) => (b[1].toward+b[1].away)-(a[1].toward+a[1].away))[0];
+  if (biggest) {
+    const [id,{toward,away}] = biggest;
+    const n = toward+away;
+    const direction = toward && away ? toward+' swayed toward the motion, '+away+' pulled away'
+      : toward ? 'swayed toward the motion' : 'pulled away from the motion';
+    $('drift-chatter').textContent = n+' '+minister(id).short+(n===1?' member':' members')+
+      (toward && away ? ': ' : ' ')+direction+' after hearing their neighbours';
+    clearTimeout(driftTimer);
+    driftTimer = setTimeout(() => { $('drift-chatter').textContent = ''; },3000);
+  }
+  const counts = caucusCounts(members);
+  for (const line of document.querySelectorAll('[data-caucus]')) line.textContent = caucusLine(counts.get(line.dataset.caucus));
+  drawSeats();
 }
 
 function meter(value, threshold) {
@@ -209,7 +293,8 @@ function renderChamber() {
   $('tally').innerHTML = '<span>Weighted stance <strong>'+pct(support)+'</strong></span>'+meter(support,thresholds[threshold])+
     '<small>Default threshold: '+esc(human(threshold))+page(s.config.passageCite)+'</small>';
   $('chamber').classList.toggle('has-speaker', Boolean(liveSpeech));
-  const markup = s.ministers.map(card);
+  const counts = caucusCounts(s.members);
+  const markup = s.ministers.map(m => card(m,counts.get(m.id)));
   const split = Math.ceil(markup.length/2);
   $('left').innerHTML = markup.slice(0,split).join('');
   $('right').innerHTML = markup.slice(split).join('');
@@ -218,7 +303,7 @@ function renderChamber() {
   drawSeats();
 }
 
-function card(m) {
+function card(m, caucus) {
   const stance = Math.max(0,Math.min(4,Math.round(m.stance)));
   const speaking = liveSpeech?.minister === m.id || liveSpeech?.short === m.short;
   const name = (m.veto ? 'Tribune' : 'Senator')+' of '+m.short;
@@ -227,6 +312,7 @@ function card(m) {
     (speaking ? ' <span class="wave" aria-label="Speaking"><i></i><i></i><i></i></span>' : '')+'</h3>'+
     '<span class="stance" aria-label="'+esc(LEVELS[stance])+'" title="'+esc(LEVELS[stance])+'">'+
     stanceColors.map((c,i) => '<i class="'+(i===stance?'active':'')+'" style="background:'+c+'"></i>').join('')+'</span></span></button>'+
+    '<p class="caucus-card" data-caucus="'+esc(m.id)+'">'+esc(caucusLine(caucus))+'</p>'+
     (m.condition ? '<p class="demand">'+esc(m.condition)+'</p>' : '')+
     (m.lastCite ? '<button class="chip" data-cite="'+esc(m.id)+'">'+citeLabel(m.lastCite)+'</button>' : '')+
     (speaking ? '<div class="speech">'+esc(liveSpeech.line)+'</div>' : '')+'</article>';
@@ -340,7 +426,7 @@ function drawSeats() {
     const previous = previousSeats.get(member.id);
     if (!reducedMotion.matches && previous != null && Math.abs(previous-member.support)>.01) {
       const delay = now-rippleStart < 70 ? 330*Math.hypot(member.seat.x,member.seat.y) : 0;
-      flashes.set(member.id,{start:now+delay,previous});
+      flashes.set(member.id,{start:now+delay,previous,strong: Math.abs(previous-member.support)>=.3});
     }
     previousSeats.set(member.id,member.support);
     const flash = flashes.get(member.id);
@@ -348,13 +434,21 @@ function drawSeats() {
     const blendAmount = Math.max(0,Math.min(1,elapsed/220));
     const pulse = flash && elapsed>=0 ? Math.max(0,1-elapsed/400) : 0;
     if (elapsed>=400) flashes.delete(member.id);
-    const r = radius+2*pulse;
+    const r = radius+(flash?.strong ? 3.5 : 2)*pulse;
     ctx.fillStyle = blend(flash ? flash.previous+(member.support-flash.previous)*blendAmount : member.support);
     ctx.strokeStyle = (document.activeElement === canvas && i === seatFocus) || pulse>.4 ? '#fff2bd' : color(minister(member.ministry));
     ctx.beginPath();
     ctx.roundRect(x-r,y-r*.65,r*2,r*1.3,2);
     ctx.fill();
     ctx.stroke();
+    if (highlightedSeats.has(member.id)) {
+      ctx.beginPath();
+      ctx.arc(x,y,r+3.5,0,2*Math.PI);
+      ctx.strokeStyle = '#e3b976';
+      ctx.lineWidth = 1.7;
+      ctx.stroke();
+      ctx.lineWidth = 1;
+    }
     return {x,y,member};
   });
   cancelAnimationFrame(animation);
@@ -426,6 +520,7 @@ function auditMinister(m) {
     }).join(''));
 }
 function auditSeat(member) {
+  $('audit-hint').hidden = true;
   const m = minister(member.ministry);
   const history = [...(member.history || [])].reverse();
   const latest = history[0];
@@ -439,6 +534,7 @@ function auditSeat(member) {
 $('chamber').addEventListener('click',event=>{
   const btn = event.target.closest('[data-minister],[data-cite]');
   if (!btn) return;
+  $('audit-hint').hidden = true;
   const m = minister(btn.dataset.minister || btn.dataset.cite);
   if (btn.dataset.cite) audit(m.short+' · citation','<p>'+citeLabel(m.lastCite)+'</p><blockquote>'+esc(citeText(m.lastCite))+'</blockquote>');
   else auditMinister(m);
@@ -454,11 +550,72 @@ function renderFace(face) {
   $('face').innerHTML = '<span>Expression · '+esc(face.label)+'</span>'+
     (probabilities.length ? '<div class="face-bars">'+probabilities.map(([label,p])=>'<span title="'+esc(label+' '+pct(p))+'"><i style="width:'+pct(p)+'"></i></span>').join('')+'</div>' : Number.isFinite(face.conf) ? ' · '+pct(face.conf) : '');
 }
+const visionUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304';
+const faceModelUrl = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
+let faceDetector, cameraAnimation;
+const clamp = (value,min,max) => Math.max(min,Math.min(max,value));
+
+async function initializeFaceCrop(cameraStream) {
+  const video = $('camera');
+  const canvas = $('camera-crop');
+  const ctx = canvas.getContext('2d');
+  let crop, target, lastCheck = -Infinity, lastFace = -Infinity;
+  let detector;
+  $('tracking-status').textContent = 'Centering…';
+  const paint = now => {
+    if (stream !== cameraStream) return;
+    cameraAnimation = requestAnimationFrame(paint);
+    if (video.readyState < 2) return;
+    const w = video.videoWidth, h = video.videoHeight, aspect = canvas.width/canvas.height;
+    if (detector && now-lastCheck >= 110) {
+      lastCheck = now;
+      try {
+        const boxes = detector.detectForVideo(video,now).detections.map(d => d.boundingBox).filter(Boolean);
+        const box = boxes.reduce((largest,b) => !largest || b.width*b.height>largest.width*largest.height ? b : largest,null);
+        if (box) {
+          target = {x:box.originX+box.width/2,y:box.originY+box.height*.51,h:Math.max(box.height*1.32,box.width*1.12/aspect)};
+          lastFace = now;
+        }
+      } catch {
+        detector = null;
+        $('tracking-status').textContent = 'Manual framing';
+      }
+    }
+    const tracked = detector && target && now-lastFace<950;
+    if (detector) $('tracking-status').textContent = tracked ? 'Face centered' : 'Look toward camera';
+    const fit = tracked ? target : {x:w/2,y:h*.45,h:h*.49};
+    const eased = crop ||= {...fit};
+    for (const key of ['x','y','h']) eased[key] += (fit[key]-eased[key])*.19;
+    const height = clamp(eased.h/Number($('face-zoom').value),24,Math.min(h,w/aspect));
+    const width = height*aspect;
+    const x = clamp(eased.x-width/2,0,w-width);
+    const y = clamp(eased.y-height/2,0,h-height);
+    ctx.setTransform(-1,0,0,1,canvas.width,0);
+    ctx.drawImage(video,x,y,width,height,0,0,canvas.width,canvas.height);
+  };
+  cameraAnimation = requestAnimationFrame(paint);
+  try {
+    faceDetector ||= (async () => {
+      const { FilesetResolver, FaceDetector } = await import(visionUrl+'/vision_bundle.mjs');
+      const vision = await FilesetResolver.forVisionTasks(visionUrl+'/wasm');
+      return FaceDetector.createFromOptions(vision,{
+        baseOptions:{modelAssetPath:faceModelUrl,delegate:'CPU'},runningMode:'VIDEO',minDetectionConfidence:.53
+      });
+    })().catch(error => { faceDetector = null; throw error; });
+    const ready = await faceDetector;
+    if (stream === cameraStream) detector = ready;
+  } catch {
+    if (stream === cameraStream) $('tracking-status').textContent = 'Manual framing';
+  }
+}
+
 function stopCamera() {
   stream?.getTracks().forEach(track=>track.stop());
   stream = null;
   $('camera').srcObject = null;
-  $('camera').hidden = true;
+  cancelAnimationFrame(cameraAnimation);
+  $('camera-crop').hidden = true;
+  $('framing').hidden = true;
   $('bust').hidden = false;
   $('cam').textContent = 'Camera off';
   $('cam').setAttribute('aria-pressed','false');
@@ -469,14 +626,23 @@ $('cam').onclick = async () => {
   $('cam').disabled = true;
   try {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('Camera requires a secure browser context.');
-    stream = await navigator.mediaDevices.getUserMedia({video:{width:640,height:480},audio:false});
+    const cameraStream = await navigator.mediaDevices.getUserMedia({video:{width:640,height:480},audio:false});
+    if ($('chamber').hidden) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      return;
+    }
+    stream = cameraStream;
     $('camera').srcObject = stream;
-    $('camera').hidden = false;
+    await $('camera').play();
+    if (stream !== cameraStream) return;
+    $('camera-crop').hidden = false;
+    $('framing').hidden = false;
+    void initializeFaceCrop(stream);
     $('bust').hidden = true;
     $('cam').textContent = 'Camera on';
     $('cam').setAttribute('aria-pressed','true');
     stream.getVideoTracks()[0]?.addEventListener('ended',stopCamera,{once:true});
-  } catch (error) { showError(error); }
+  } catch (error) { stopCamera(); showError(error); }
   finally { $('cam').disabled = false; }
 };
 function frame() {
