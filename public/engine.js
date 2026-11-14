@@ -226,10 +226,18 @@ export function createEngine({ base = '', config, decision, caucusFeedback = tru
       sen.caucusMean = +mean(S.members.map(c => c.support)).toFixed(2);
       emit('sentence', sen); emit('coach', coach());
       // A question beats an interrupt: the senator whose Drex `ask` answer is a question with the highest confidence (> 0.5).
-      const asks = S.ministers.map(m => ({ m, a: a[`${m.id}_ask`] })).filter(x => x.a && x.a.choice !== 'none' && x.a.confidence > 0.5).sort((x, y) => y.a.confidence - x.a.confidence);
+      // Rank each senator's best question by Drex's probability for it (multi-option choice confidence runs ~0.3, so a
+      // confidence cut-off almost never fired). Fires if Drex picked one (p > 0.4); the Senate always asks its top-ranked
+      // question in the opening round and whenever 2 sentences pass with none asked.
+      const ranked = S.ministers.map(m => { const x = a[`${m.id}_ask`]; if (!x) return null;
+        const best = Object.entries(x.probabilities || { [x.choice]: x.confidence }).filter(([k]) => k !== 'none').sort((p, q) => q[1] - p[1])[0];
+        return best ? { m, a: { choice: best[0], confidence: best[1], picked: x.choice !== 'none' } } : null; }).filter(Boolean).sort((x, y) => y.a.confidence - x.a.confidence);
+      const lastQ = S.questions.length ? S.questions[S.questions.length - 1].at : -9;
+      const due = !S.openQuestion && (sen.i === 0 || sen.i - lastQ >= 2);
+      const asks = ranked.filter(x => x.a.picked && x.a.confidence > 0.4).concat(due && ranked[0] ? [ranked[0]] : []);
       // Floor goes to whoever Drex rates more urgent: the best question or the most urgent interrupt.
       const urgent = S.ministers.filter(m => m.interruptP > 0.6 && sen.i - m.lastInterrupt >= 2).sort((x, y) => y.interruptP - x.interruptP)[0];
-      if (asks.length && (!urgent || asks[0].a.confidence >= urgent.interruptP)) {
+      if (asks.length && (!urgent || due || asks[0].a.confidence >= urgent.interruptP)) {
         const { m, a: ans } = asks[0]; const qt = m.questions[+ans.choice.slice(1)]; m.asked.push(qt); m.lastInterrupt = sen.i;
         const ev = { kind: 'question', minister: m.id, short: m.short, voice: m.voice, line: qt, text: qt, p: ans.confidence, interruptP: m.interruptP, stance: m.stance, cite: null, condition: null, at: sen.i };
         S.openQuestion = ev; S.questions.push(ev); S.interrupts.push(ev); emit('interrupt', ev); emit('question', ev);
