@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Senate of You</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="mast"><span class="mark" aria-hidden="true">S</span><h1>The Senate of You</h1><span id="ticker"></span></header>
+<div id="errors" role="alert" hidden></div>
+<main id="setup">
+<form id="convene" class="setup-card">
+<p class="eyebrow">The Senate of You</p>
+<h2>Convene the Senate</h2>
+<label for="decision">What decision is before the Senate?</label>
+<textarea id="decision" rows="2" required placeholder="Should I quit my job to join Lumen Labs as founding engineer?"></textarea>
+<div class="setup-actions"><button type="button" id="sample">Use sample documents</button><span id="source-status"></span></div>
+<div class="files"><label>Constitution PDF<input id="constitution" type="file" accept="application/pdf,.pdf"></label>
+<label>Evidence PDFs<input id="evidence" type="file" accept="application/pdf,.pdf" multiple></label></div>
+<button class="gold" id="convene-button">Convene the Senate</button>
+<div id="progress" aria-live="polite"></div><div id="rollcall"></div>
+</form>
+</main>
+<main id="chamber" hidden>
+<section class="motion"><div><p class="eyebrow">The Motion</p><h2 id="motion"></h2></div><div id="tally"></div></section>
+<section class="floor">
+<div class="senators" id="left"></div>
+<div class="arena">
+<canvas id="seats" aria-label="Senate caucus seats by ministry and support"></canvas><div id="rim"></div>
+<div class="rostrum">
+<div class="oval"><span id="bust" aria-hidden="true">♜</span><video id="camera" muted autoplay playsinline hidden></video></div>
+<div class="consul"><strong>Consul</strong><button id="cam" type="button" aria-pressed="false">Camera off</button></div>
+<div id="face" aria-live="polite"></div>
+<div class="speak"><button id="mic" type="button" aria-pressed="false">Hold Space to speak</button><span>Reasons · Trades · Fears</span></div>
+<div id="subtitle" aria-live="polite"></div>
+<form id="address"><input id="words" aria-label="Address the Senate in writing" placeholder="Or address the Senate in writing…" required><button>Send</button></form>
+</div>
+</div>
+<div class="senators" id="right"></div>
+</section>
+<section class="ledger"><div><p class="eyebrow">Caucus support</p><div id="curve"></div></div>
+<div class="commands"><span id="live-status" role="status"></span><button id="transcript">Transcript</button><button class="gold" id="vote">Divide the Senate</button></div></section>
+</main>
+<main id="division" hidden></main>
+<dialog id="acta"><div class="dialog-head"><h2 id="audit-title">Acta Senatus</h2><form method="dialog"><button aria-label="Close">Close</button></form></div><div id="audit-body"></div></dialog>
+<script type="module" src="./view.js"></script>
+</body></html>
