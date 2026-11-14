@@ -6,7 +6,9 @@ Our project for the [Nace.AI Drexathon](https://www.nace.ai/drexathon).
 - Submit: https://www.nace.ai/drexathon/submit
 - Discord: https://discord.gg/nace-ai
 
-## The Cabinet: a parliament for your decisions
+**Presentation (PDF):** [presentation/The-Senate-of-You.pdf](presentation/The-Senate-of-You.pdf) · **Code zip:** https://github.com/shubhamjoshipromail-svg/drexathon/archive/refs/heads/main.zip
+
+## The Senate of You (The Cabinet): a parliament for your decisions
 Bring a real decision ("Should I quit my job for the startup?"). Your **personal constitution** (PDF) is read by **NDI**: it creates the ministries (Finance, Health, Family...), their vote weights, vetoes, passage thresholds and the leader's override rule, every item with a page citation. Your **evidence** (an offer letter) is read by NDI into cited facts. Then you argue out loud. After every sentence, **Drex** decides independently for 6 ministers (stance, interrupt?, which rule/fact to cite, which condition to demand, ally, did you just accept a condition?) and ~150 caucus members (support), in two packed calls (~0.6 s + ~1.8 s). A webcam frame goes to **Drex Max** (~0.3 s) so the cabinet knows you looked anxious while saying it. The caucus keeps drifting every 3 s (swarm). When you call the vote, Drex casts the votes and judges veto scope and which threshold applies; **the engine enforces authority in code** (weights, 2/3 rule, vetoes, override conditions). The LLM (OpenAI) is only the ministers' mouth and drafts candidate conditions; it decides nothing.
 
 Tracks: Swarm + NDI bonus. Engine: `public/engine.js`. Fallback game: Shout Command at `/archive/shout-command/`.
