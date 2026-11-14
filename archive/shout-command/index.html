@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shout Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050b14;--panel:#0b1626;--line:#1c2c44;--text:#d9e6f5;--dim:#7b8ea8;--blue:#3fa9ff;--red:#ff5a5f;--gold:#ffd166;--green:#4fe3a1}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif}
+#app{display:grid;grid-template-columns:1fr 380px;grid-template-rows:auto 1fr;height:100vh}
+header{grid-column:1/3;display:flex;align-items:center;gap:20px;padding:10px 18px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,#071425,#0b1626)}
+header h1{font-size:20px;margin:0;letter-spacing:.5px}
+header h1 span{color:var(--gold)}
+.score{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600}
+.score .b{color:var(--blue)} .score .r{color:var(--red)}
+.pill{font-size:12px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--dim)}
+.pill.ok{color:var(--green);border-color:#1f5a44}
+.spacer{flex:1}
+button{font-family:inherit;background:#13243b;color:var(--text);border:1px solid #284266;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px}
+button:hover{background:#1a3150}
+button.primary{background:var(--gold);color:#1a1300;border-color:var(--gold);font-weight:700}
+#stage{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:10px}
+canvas{max-width:100%;max-height:100%;border-radius:12px;border:1px solid var(--line);background:#06121f}
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(3,8,15,.82);text-align:center;padding:30px}
+#overlay h2{font-size:42px;margin:0}
+#overlay p{color:var(--dim);max-width:560px;line-height:1.5;margin:0}
+aside{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.box{padding:12px 14px;border-bottom:1px solid var(--line)}
+.box h3{margin:0 0 8px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim)}
+#order{width:100%;font:inherit;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid #284266;background:#06111e;color:var(--text);outline:none}
+#order:focus{border-color:var(--blue)}
+.row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+#mic.on{background:var(--red);border-color:var(--red);color:#fff}
+#interim{font-size:13px;color:var(--gold);min-height:18px;margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:4px 8px;border-radius:99px;background:#0f1f34;border:1px solid #213a5c;cursor:pointer;color:#b9cbe2}
+.chip:hover{border-color:var(--blue)}
+#stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-family:'JetBrains Mono',monospace;font-size:12px}
+#stats div{background:#081322;border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+#stats b{display:block;font-size:16px;color:var(--text)}
+#stats .lbl{color:var(--dim)}
+#log{flex:1;overflow:auto;padding:10px 14px;font-size:13px;min-height:0}
+.entry{margin-bottom:10px;padding:8px 10px;border-radius:8px;background:#081322;border-left:3px solid var(--line)}
+.entry.blue{border-left-color:var(--blue)} .entry.red{border-left-color:var(--red)} .entry.sys{border-left-color:var(--gold)}
+.entry .who{font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+.entry .txt{margin:3px 0;font-weight:600}
+.entry .res{font-size:12px;color:#9fb3cc;font-family:'JetBrains Mono',monospace;line-height:1.5}
+.fast{color:var(--green)} .slow{color:var(--red)}
+#doctrine{font-size:12px;color:#b9cbe2;line-height:1.5}
+#doctrine .cite{color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:11px}
+@media (max-width:900px){#app{grid-template-columns:1fr;grid-template-rows:auto auto auto}aside{border-left:0}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>SHOUT <span>COMMAND</span></h1>
+    <div class="score"><span class="b" id="sb">0</span> : <span class="r" id="sr">0</span></div>
+    <div class="pill" id="clock">0:00</div>
+    <div class="spacer"></div>
+    <div class="pill" id="st-drex">Drex</div>
+    <div class="pill" id="st-llm">LLM general</div>
+    <label class="pill"><input type="checkbox" id="reflexes" checked> reflexes</label>
+    <button id="pause">Pause</button>
+  </header>
+  <div id="stage">
+    <canvas id="cv" width="1100" height="680"></canvas>
+    <div id="overlay">
+      <h2>SHOUT <span style="color:var(--gold)">COMMAND</span></h2>
+      <p>You command the <b style="color:var(--blue)">Blue swarm</b> with your voice. Every creature listens to your order, and Drex decides what each one does. The <b style="color:var(--red)">Red swarm</b> is led by an LLM general. Hold the reefs, the vent, the kelp and the trench to score.</p>
+      <p>Hold <b>Space</b> to talk, or type an order and press Enter.</p>
+      <button class="primary" id="start">Start battle</button>
+    </div>
+  </div>
+  <aside>
+    <div class="box">
+      <h3>Your order</h3>
+      <input id="order" placeholder="e.g. biters take the vent, spitters cover them" autocomplete="off">
+      <div class="row"><button id="mic">🎙 Hold Space / click to talk</button></div>
+      <div id="interim"></div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="box"><h3>Decision engine</h3><div id="stats"></div></div>
+    <div class="box" id="doctrine-box"><h3>Field manual · read by NDI</h3>
+      <div class="row" style="margin-top:0"><button id="load-manual">📜 Load sample manual</button><label class="pill" style="cursor:pointer">Upload PDF<input type="file" id="manual-file" accept="application/pdf" hidden></label><a class="pill" href="field-manual.pdf" target="_blank">view PDF</a></div>
+      <div id="doctrine" style="margin-top:8px"></div></div>
+    <div id="log"></div>
+  </aside>
+</div>
+<script type="module" src="game.js"></script>
+</body>
+</html>

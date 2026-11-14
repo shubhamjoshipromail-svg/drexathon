@@ -1,0 +1,24 @@
+<!doctype html><meta charset=utf-8><title>Cam gate</title>
+<body style="font:14px system-ui;background:#111;color:#eee;padding:16px">
+<h3>P0 gate 4: Drex Max on a real webcam frame</h3>
+<video id=v autoplay playsinline muted width=320 style="border:1px solid #444"></video>
+<p><button id=b>Read my face (5 frames)</button></p><pre id=o></pre>
+<script type=module>
+const v = document.getElementById('v'), o = document.getElementById('o');
+const log = s => (o.textContent += s + '\n', window.GATE = (window.GATE || []).concat(s));
+try { v.srcObject = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } }); log('camera ok'); }
+catch (e) { log('camera error: ' + e); }
+const EMO = { excited: 'Excited, energised, smiling or animated', anxious: 'Anxious, worried, tense or stressed', unsure: 'Unsure, hesitant, doubtful or confused', determined: 'Determined, resolute, serious and focused', neutral: 'Neutral, calm, no strong expression' };
+async function read() {
+  const c = document.createElement('canvas'); c.width = 640; c.height = 480; c.getContext('2d').drawImage(v, 0, 0, 640, 480);
+  const img = c.toDataURL('image/jpeg', 0.7); const t = performance.now();
+  const r = await fetch('/api/drex', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'drex-max-v1.1', images: [img],
+    state: 'Image 1 is a webcam frame of a person arguing out loud about a big life decision.',
+    questions: { face: { type: 'choice', instructions: 'Which best describes the facial expression and body language of the person in Image 1? If no person is visible, answer neutral.', criteria: EMO }, person: { type: 'noul', instructions: 'Is a person visible in Image 1?' } } }) });
+  const j = await r.json(); const ms = Math.round(performance.now() - t);
+  if (r.status !== 200) return log('ERR ' + r.status + ' ' + JSON.stringify(j).slice(0, 300));
+  const a = j.answers.face; log(`face=${a.choice} conf=${a.confidence.toFixed(2)} person=${JSON.stringify(j.answers.person.answer ?? j.answers.person)} roundtrip=${ms}ms eval=${Math.round(j.evaluation_time_ms)}ms`);
+}
+document.getElementById('b').onclick = async () => { for (let i = 0; i < 5; i++) await read(); };
+window.readFace = read;
+</script>

@@ -18,9 +18,16 @@
 <h2>Convene the Senate</h2>
 <label for="decision">What decision is before the Senate?</label>
 <textarea id="decision" rows="2" required placeholder="Should I quit my job to join Lumen Labs as founding engineer?"></textarea>
-<div class="setup-actions"><button type="button" id="sample">Use sample documents</button><span id="source-status"></span></div>
-<div class="files"><label>Constitution PDF<input id="constitution" type="file" accept="application/pdf,.pdf"></label>
-<label>Evidence PDFs<input id="evidence" type="file" accept="application/pdf,.pdf" multiple></label></div>
+<div class="setup-actions"><button type="button" id="sample">Use the example (constitution + offer letter PDFs)</button><span id="source-status"></span></div>
+<label for="const-text">Your constitution — edit the template (NDI reads it), or upload a PDF instead</label>
+<textarea id="const-text" rows="9" spellcheck="false"></textarea>
+<div class="files"><label>or Constitution PDF<input id="constitution" type="file" accept="application/pdf,.pdf"></label>
+<label>Evidence PDFs (optional)<input id="evidence" type="file" accept="application/pdf,.pdf" multiple></label></div>
+<label for="ev-urls">Evidence links (optional, one per line): job post, listing, article, public doc</label>
+<textarea id="ev-urls" rows="2" placeholder="https://…"></textarea>
+<label for="ev-text">Evidence text (optional): paste an email, offer, message…</label>
+<textarea id="ev-text" rows="3"></textarea>
+<p class="meta">No evidence? Fine: the senators will ask you what they need to know.</p>
 <button class="gold" id="convene-button">Convene the Senate</button>
 <div id="progress" aria-live="polite"></div><div id="rollcall"></div>
 </form>

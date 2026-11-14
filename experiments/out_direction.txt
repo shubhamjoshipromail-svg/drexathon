@@ -1,0 +1,7 @@
+PASS Health      expected down got -1.04 (1.91 -> 0.87); biggest mover: Health -1.04 | "I would sleep five hours a night and work seventy-hour weeks to make this work."
+PASS Family      expected down got -0.87 (1.85 -> 0.98); biggest mover: Family -0.87 | "We would have to move to Austin, away from Sam and my parents."
+PASS Finance     expected down got -0.95 (1.95 -> 1.00); biggest mover: Finance -0.95 | "Taking the pay cut would drain my savings down to about ten thousand dollars."
+PASS Ambition    expected up   got +1.03 (2.10 -> 3.14); biggest mover: Ambition 1.03 | "I would learn more in one year there than in five years at my current job."
+PASS Adventure   expected up   got +0.47 (2.14 -> 2.61); biggest mover: Adventure 0.47 | "This is the scariest and most exciting thing I have ever considered doing."
+PASS Future Self expected down got -0.25 (1.51 -> 1.26); biggest mover: Finance -0.27 | "Honestly they could run out of money any month now, there is no revenue yet."
+DIRECTION 6/6

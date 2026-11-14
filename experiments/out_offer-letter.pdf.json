@@ -1,0 +1,1102 @@
+{
+ "ms": 0,
+ "extract": {
+  "job_id": "3da91893-3bcb-4856-8f01-3854822aff93",
+  "replayed": false,
+  "kind": "extract",
+  "status": "succeeded",
+  "name": "Extract 3da91893",
+  "project_id": null,
+  "workspace_id": "1186c7d2-7364-4d90-9381-440019d3b896",
+  "idempotency_key": "4f5c4f74-0440-4ee4-a719-7b7a5657ea11",
+  "force": null,
+  "source": {
+   "type": "workspace_file",
+   "workspace_id": "1186c7d2-7364-4d90-9381-440019d3b896",
+   "file_id": "01a1dbb6-9a2a-7cc1-8fb7-8bb8abedb980"
+  },
+  "query": null,
+  "query_scope": null,
+  "effort": null,
+  "surface": null,
+  "progress": null,
+  "result": {
+   "result_type": "extract",
+   "enrichment_status": "degraded",
+   "data": {
+    "facts": [
+     {
+      "id": "company_name",
+      "fact": "The offer is from Lumen Labs, Inc.",
+      "topic": "other"
+     },
+     {
+      "id": "company_address",
+      "fact": "The company is located at 1200 Congress Ave, Austin, TX 78701.",
+      "topic": "location"
+     },
+     {
+      "id": "letter_date",
+      "fact": "The offer letter is dated 10 November 2026.",
+      "topic": "time"
+     },
+     {
+      "id": "job_title",
+      "fact": "The position offered is Founding Engineer.",
+      "topic": "other"
+     },
+     {
+      "id": "base_salary",
+      "fact": "The base salary is $120,000 per year.",
+      "topic": "money"
+     },
+     {
+      "id": "pay_frequency",
+      "fact": "The salary is paid twice a month.",
+      "topic": "money"
+     },
+     {
+      "id": "equity_percentage",
+      "fact": "The candidate will be granted options to purchase 0.75% of the fully diluted shares.",
+      "topic": "equity"
+     },
+     {
+      "id": "vesting_period",
+      "fact": "The equity vests over 4 years.",
+      "topic": "equity"
+     },
+     {
+      "id": "vesting_cliff",
+      "fact": "The equity has a 1-year cliff.",
+      "topic": "equity"
+     },
+     {
+      "id": "cliff_condition",
+      "fact": "If the candidate leaves before the first anniversary, no options vest.",
+      "topic": "equity"
+     },
+     {
+      "id": "start_date",
+      "fact": "The start date is 4 January 2027.",
+      "topic": "time"
+     },
+     {
+      "id": "work_arrangement",
+      "fact": "The role is hybrid based in the Austin, Texas office.",
+      "topic": "location"
+     },
+     {
+      "id": "office_days",
+      "fact": "The candidate must be in the office at least 3 days per week.",
+      "topic": "time"
+     },
+     {
+      "id": "relocation_stipend",
+      "fact": "A $10,000 relocation stipend is offered.",
+      "topic": "money"
+     },
+     {
+      "id": "weekly_hours",
+      "fact": "Weeks of 50 to 60 hours are common during launches.",
+      "topic": "time"
+     },
+     {
+      "id": "seed_round_amount",
+      "fact": "Lumen Labs raised a $2.1M seed round.",
+      "topic": "money"
+     },
+     {
+      "id": "seed_round_date",
+      "fact": "The seed round was raised in March 2026.",
+      "topic": "time"
+     },
+     {
+      "id": "monthly_burn",
+      "fact": "The current burn is $150,000 per month.",
+      "topic": "money"
+     },
+     {
+      "id": "runway",
+      "fact": "The company has about 14 months of runway.",
+      "topic": "risk"
+     },
+     {
+      "id": "health_insurance",
+      "fact": "Health, dental and vision insurance are provided from day one.",
+      "topic": "health"
+     },
+     {
+      "id": "pto_policy",
+      "fact": "Unlimited paid time off is offered.",
+      "topic": "time"
+     },
+     {
+      "id": "offer_expiry",
+      "fact": "The offer expires on 21 November 2026.",
+      "topic": "time"
+     },
+     {
+      "id": "signatory",
+      "fact": "The letter is signed by Priya Raman, CEO.",
+      "topic": "other"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "path": "/facts/0",
+     "value": "{\"id\": \"company_name\", \"fact\": \"The offer is from Lumen Labs, Inc.\", \"topic\": \"other\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.09366893796564724,
+           0.17482779097387174
+          ],
+          [
+           0.741927611174587,
+           0.17482779097387174
+          ],
+          [
+           0.741927611174587,
+           0.21522662271559456
+          ],
+          [
+           0.09366893796564724,
+           0.21522662271559456
+          ]
+         ]
+        ]
+       },
+       "source_text": "We are delighted to offer you the position of Founding Engineer at Lumen Labs, Inc."
+      }
+     ]
+    },
+    {
+     "path": "/facts/1",
+     "value": "{\"id\": \"company_address\", \"fact\": \"The company is located at 1200 Congress Ave, Austin, TX 78701.\", \"topic\": \"location\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.091376702077173,
+           0.10138310145911096
+          ],
+          [
+           0.6005787609973351,
+           0.10138310145911096
+          ],
+          [
+           0.6005787609973351,
+           0.119687648456057
+          ],
+          [
+           0.091376702077173,
+           0.119687648456057
+          ]
+         ]
+        ]
+       },
+       "source_text": "1200 Congress Ave, Austin, TX 78701 | 10 November 2026"
+      }
+     ]
+    },
+    {
+     "path": "/facts/2",
+     "value": "{\"id\": \"letter_date\", \"fact\": \"The offer letter is dated 10 November 2026.\", \"topic\": \"time\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.091376702077173,
+           0.10138310145911096
+          ],
+          [
+           0.6005787609973351,
+           0.10138310145911096
+          ],
+          [
+           0.6005787609973351,
+           0.119687648456057
+          ],
+          [
+           0.091376702077173,
+           0.119687648456057
+          ]
+         ]
+        ]
+       },
+       "source_text": "1200 Congress Ave, Austin, TX 78701 | 10 November 2026"
+      }
+     ]
+    },
+    {
+     "path": "/facts/3",
+     "value": "{\"id\": \"job_title\", \"fact\": \"The position offered is Founding Engineer.\", \"topic\": \"other\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.09366893796564724,
+           0.17482779097387174
+          ],
+          [
+           0.741927611174587,
+           0.17482779097387174
+          ],
+          [
+           0.741927611174587,
+           0.21522662271559456
+          ],
+          [
+           0.09366893796564724,
+           0.21522662271559456
+          ]
+         ]
+        ]
+       },
+       "source_text": "We are delighted to offer you the position of Founding Engineer at Lumen Labs, Inc."
+      }
+     ]
+    },
+    {
+     "path": "/facts/4",
+     "value": "{\"id\": \"base_salary\", \"fact\": \"The base salary is $120,000 per year.\", \"topic\": \"money\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.0873215785054576,
+           0.22921615201900236
+          ],
+          [
+           0.7615449202350966,
+           0.22921615201900236
+          ],
+          [
+           0.7615449202350966,
+           0.27019002375296913
+          ],
+          [
+           0.0873215785054576,
+           0.27019002375296913
+          ]
+         ]
+        ]
+       },
+       "source_text": "1. Base salary. Your base salary will be $120,000 per year, paid twice a month."
+      }
+     ]
+    },
+    {
+     "path": "/facts/5",
+     "value": "{\"id\": \"pay_frequency\", \"fact\": \"The salary is paid twice a month.\", \"topic\": \"money\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.0873215785054576,
+           0.22921615201900236
+          ],
+          [
+           0.7615449202350966,
+           0.22921615201900236
+          ],
+          [
+           0.7615449202350966,
+           0.27019002375296913
+          ],
+          [
+           0.0873215785054576,
+           0.27019002375296913
+          ]
+         ]
+        ]
+       },
+       "source_text": "1. Base salary. Your base salary will be $120,000 per year, paid twice a month."
+      }
+     ]
+    },
+    {
+     "path": "/facts/6",
+     "value": "{\"id\": \"equity_percentage\", \"fact\": \"The candidate will be granted options to purchase 0.75% of the fully diluted shares.\", \"topic\": \"equity\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.08564231738035265,
+           0.2838479809976247
+          ],
+          [
+           0.7539882451721243,
+           0.2838479809976247
+          ],
+          [
+           0.7539882451721243,
+           0.3485748218527316
+          ],
+          [
+           0.08564231738035265,
+           0.3485748218527316
+          ]
+         ]
+        ]
+       },
+       "source_text": "2. Equity. You will be granted options to purchase 0.75% of the fully diluted shares of the company, vesting over 4 years with a 1-year cliff."
+      }
+     ]
+    },
+    {
+     "path": "/facts/7",
+     "value": "{\"id\": \"vesting_period\", \"fact\": \"The equity vests over 4 years.\", \"topic\": \"equity\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.08564231738035265,
+           0.2838479809976247
+          ],
+          [
+           0.7539882451721243,
+           0.2838479809976247
+          ],
+          [
+           0.7539882451721243,
+           0.3485748218527316
+          ],
+          [
+           0.08564231738035265,
+           0.3485748218527316
+          ]
+         ]
+        ]
+       },
+       "source_text": "2. Equity. You will be granted options to purchase 0.75% of the fully diluted shares of the company, vesting over 4 years with a 1-year cliff."
+      }
+     ]
+    },
+    {
+     "path": "/facts/8",
+     "value": "{\"id\": \"vesting_cliff\", \"fact\": \"The equity has a 1-year cliff.\", \"topic\": \"equity\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.08564231738035265,
+           0.2838479809976247
+          ],
+          [
+           0.7539882451721243,
+           0.2838479809976247
+          ],
+          [
+           0.7539882451721243,
+           0.3485748218527316
+          ],
+          [
+           0.08564231738035265,
+           0.3485748218527316
+          ]
+         ]
+        ]
+       },
+       "source_text": "2. Equity. You will be granted options to purchase 0.75% of the fully diluted shares of the company, vesting over 4 years with a 1-year cliff."
+      }
+     ]
+    },
+    {
+     "path": "/facts/9",
+     "value": "{\"id\": \"cliff_condition\", \"fact\": \"If the candidate leaves before the first anniversary, no options vest.\", \"topic\": \"equity\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.13998237635508637,
+           0.32711154200397496
+          ],
+          [
+           0.6917911067935569,
+           0.32711154200397496
+          ],
+          [
+           0.6917911067935569,
+           0.34976673614814097
+          ],
+          [
+           0.13998237635508637,
+           0.34976673614814097
+          ]
+         ]
+        ]
+       },
+       "source_text": "If you leave before your first anniversary, no options vest."
+      }
+     ]
+    },
+    {
+     "path": "/facts/10",
+     "value": "{\"id\": \"start_date\", \"fact\": \"The start date is 4 January 2027.\", \"topic\": \"time\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.08480268681780016,
+           0.35985748218527314
+          ],
+          [
+           0.600335852225021,
+           0.35985748218527314
+          ],
+          [
+           0.600335852225021,
+           0.3818289786223278
+          ],
+          [
+           0.08480268681780016,
+           0.3818289786223278
+          ]
+         ]
+        ]
+       },
+       "source_text": "3. Start date. Your start date will be 4 January 2027."
+      }
+     ]
+    },
+    {
+     "path": "/facts/11",
+     "value": "{\"id\": \"work_arrangement\", \"fact\": \"The role is hybrid based in the Austin, Texas office.\", \"topic\": \"location\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.08480268681780016,
+           0.39311163895486934
+          ],
+          [
+           0.744752308984047,
+           0.39311163895486934
+          ],
+          [
+           0.744752308984047,
+           0.45665083135391926
+          ],
+          [
+           0.08480268681780016,
+           0.45665083135391926
+          ]
+         ]
+        ]
+       },
+       "source_text": "4. Location. This is a hybrid role based in our Austin, Texas office, in the office at least 3 days per week."
+      }
+     ]
+    },
+    {
+     "path": "/facts/12",
+     "value": "{\"id\": \"office_days\", \"fact\": \"The candidate must be in the office at least 3 days per week.\", \"topic\": \"time\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.08480268681780016,
+           0.39311163895486934
+          ],
+          [
+           0.744752308984047,
+           0.39311163895486934
+          ],
+          [
+           0.744752308984047,
+           0.45665083135391926
+          ],
+          [
+           0.08480268681780016,
+           0.45665083135391926
+          ]
+         ]
+        ]
+       },
+       "source_text": "4. Location. This is a hybrid role based in our Austin, Texas office, in the office at least 3 days per week."
+      }
+     ]
+    },
+    {
+     "path": "/facts/13",
+     "value": "{\"id\": \"relocation_stipend\", \"fact\": \"A $10,000 relocation stipend is offered.\", \"topic\": \"money\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.1609507201446748,
+           0.43547110055423593
+          ],
+          [
+           0.6432215978815474,
+           0.43547110055423593
+          ],
+          [
+           0.6432215978815474,
+           0.45665083135391926
+          ],
+          [
+           0.1609507201446748,
+           0.45665083135391926
+          ]
+         ]
+        ]
+       },
+       "source_text": "We offer a $10,000 relocation stipend."
+      }
+     ]
+    },
+    {
+     "path": "/facts/14",
+     "value": "{\"id\": \"weekly_hours\", \"fact\": \"Weeks of 50 to 60 hours are common during launches.\", \"topic\": \"time\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 1,
+        "polygons": [
+         [
+          [
+           0.08312342569269521,
+           0.46971496437054633
+          ],
+          [
+           0.7355163727959698,
+           0.46971496437054633
+          ],
+          [
+           0.7355163727959698,
+           0.5106888361045131
+          ],
+          [
+           0.08312342569269521,
+           0.5106888361045131
+          ]
+         ]
+        ]
+       },
+       "source_text": "5. Hours. We are an early-stage team. Weeks of 50 to 60 hours are common during launches."
+      }
+     ]
+    },
+    {
+     "path": "/facts/15",
+     "value": "{\"id\": \"seed_round_amount\", \"fact\": \"Lumen Labs raised a $2.1M seed round.\", \"topic\": \"money\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 2,
+        "polygons": [
+         [
+          [
+           0.08144416456759027,
+           0.14251781472684086
+          ],
+          [
+           0.8178001679261125,
+           0.14251781472684086
+          ],
+          [
+           0.8178001679261125,
+           0.20724465558194774
+          ],
+          [
+           0.08144416456759027,
+           0.20724465558194774
+          ]
+         ]
+        ]
+       },
+       "source_text": "6. Company status. Lumen Labs raised a $2.1M seed round in March 2026."
+      }
+     ]
+    },
+    {
+     "path": "/facts/16",
+     "value": "{\"id\": \"seed_round_date\", \"fact\": \"The seed round was raised in March 2026.\", \"topic\": \"time\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 2,
+        "polygons": [
+         [
+          [
+           0.08144416456759027,
+           0.14251781472684086
+          ],
+          [
+           0.8178001679261125,
+           0.14251781472684086
+          ],
+          [
+           0.8178001679261125,
+           0.20724465558194774
+          ],
+          [
+           0.08144416456759027,
+           0.20724465558194774
+          ]
+         ]
+        ]
+       },
+       "source_text": "6. Company status. Lumen Labs raised a $2.1M seed round in March 2026."
+      }
+     ]
+    },
+    {
+     "path": "/facts/17",
+     "value": "{\"id\": \"monthly_burn\", \"fact\": \"The current burn is $150,000 per month.\", \"topic\": \"money\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 2,
+        "polygons": [
+         [
+          [
+           0.08144416456759027,
+           0.16409342834520982
+          ],
+          [
+           0.8178001679261124,
+           0.16409342834520982
+          ],
+          [
+           0.8178001679261124,
+           0.20724465558194774
+          ],
+          [
+           0.08144416456759027,
+           0.20724465558194774
+          ]
+         ]
+        ]
+       },
+       "source_text": "At our current burn of $150,000 per month we have about 14 months of runway."
+      }
+     ]
+    },
+    {
+     "path": "/facts/18",
+     "value": "{\"id\": \"runway\", \"fact\": \"The company has about 14 months of runway.\", \"topic\": \"risk\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 2,
+        "polygons": [
+         [
+          [
+           0.08144416456759027,
+           0.16409342834520982
+          ],
+          [
+           0.8178001679261124,
+           0.16409342834520982
+          ],
+          [
+           0.8178001679261124,
+           0.20724465558194774
+          ],
+          [
+           0.08144416456759027,
+           0.20724465558194774
+          ]
+         ]
+        ]
+       },
+       "source_text": "At our current burn of $150,000 per month we have about 14 months of runway."
+      }
+     ]
+    },
+    {
+     "path": "/facts/19",
+     "value": "{\"id\": \"health_insurance\", \"fact\": \"Health, dental and vision insurance are provided from day one.\", \"topic\": \"health\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 2,
+        "polygons": [
+         [
+          [
+           0.08312342569269521,
+           0.21912114014251782
+          ],
+          [
+           0.690176322418136,
+           0.21912114014251782
+          ],
+          [
+           0.690176322418136,
+           0.26128266033254155
+          ],
+          [
+           0.08312342569269521,
+           0.26128266033254155
+          ]
+         ]
+        ]
+       },
+       "source_text": "7. Benefits. Health, dental and vision insurance from day one."
+      }
+     ]
+    },
+    {
+     "path": "/facts/20",
+     "value": "{\"id\": \"pto_policy\", \"fact\": \"Unlimited paid time off is offered.\", \"topic\": \"time\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 2,
+        "polygons": [
+         [
+          [
+           0.08312342569269521,
+           0.21912114014251782
+          ],
+          [
+           0.690176322418136,
+           0.21912114014251782
+          ],
+          [
+           0.690176322418136,
+           0.26128266033254155
+          ],
+          [
+           0.08312342569269521,
+           0.26128266033254155
+          ]
+         ]
+        ]
+       },
+       "source_text": "Unlimited paid time off."
+      }
+     ]
+    },
+    {
+     "path": "/facts/21",
+     "value": "{\"id\": \"offer_expiry\", \"fact\": \"The offer expires on 21 November 2026.\", \"topic\": \"time\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 2,
+        "polygons": [
+         [
+          [
+           0.08480268681780016,
+           0.27375296912114017
+          ],
+          [
+           0.5843828715365239,
+           0.27375296912114017
+          ],
+          [
+           0.5843828715365239,
+           0.29394299287410924
+          ],
+          [
+           0.08480268681780016,
+           0.29394299287410924
+          ]
+         ]
+        ]
+       },
+       "source_text": "8. Expiry. This offer expires on 21 November 2026."
+      }
+     ]
+    },
+    {
+     "path": "/facts/22",
+     "value": "{\"id\": \"signatory\", \"fact\": \"The letter is signed by Priya Raman, CEO.\", \"topic\": \"other\"}",
+     "status": "found",
+     "confidence": 0.8888888888888888,
+     "ambiguous": false,
+     "derived": false,
+     "citations": [
+      {
+       "location": {
+        "kind": "page_region",
+        "page": 2,
+        "polygons": [
+         [
+          [
+           0.08312342569269521,
+           0.36163895486935865
+          ],
+          [
+           0.5516372795969773,
+           0.36163895486935865
+          ],
+          [
+           0.5516372795969773,
+           0.3818289786223278
+          ],
+          [
+           0.08312342569269521,
+           0.3818289786223278
+          ]
+         ]
+        ]
+       },
+       "source_text": "Sincerely, Priya Raman, CEO, Lumen Labs, Inc."
+      }
+     ]
+    }
+   ],
+   "schema_id": null,
+   "schema_version": null,
+   "converted_pdf_url": null,
+   "units": 6,
+   "warnings": [
+    "Some highlights could not be refined; available document regions are shown instead."
+   ],
+   "disclosures": [],
+   "unrefined_field_paths": [
+    "/facts/10",
+    "/facts/11",
+    "/facts/12",
+    "/facts/14",
+    "/facts/15",
+    "/facts/16",
+    "/facts/19",
+    "/facts/20",
+    "/facts/21",
+    "/facts/22",
+    "/facts/4",
+    "/facts/5",
+    "/facts/6",
+    "/facts/7",
+    "/facts/8"
+   ]
+  },
+  "result_state": "available",
+  "result_error": null,
+  "error": null,
+  "units": 6,
+  "credits": 6,
+  "usage_final": true,
+  "credit_schedule_version": 7,
+  "usage_finalized_at": "2026-11-14T20:19:16.317131Z",
+  "cost": {
+   "lines": [
+    {
+     "unit": "page",
+     "quantity": 2,
+     "execution": "fresh",
+     "operation": "parse",
+     "amount_usd": "0.007",
+     "reuse_reason": null,
+     "unit_price_usd": "0.0035"
+    },
+    {
+     "unit": "page",
+     "quantity": 2,
+     "execution": "fresh",
+     "operation": "extract",
+     "amount_usd": "0.017",
+     "reuse_reason": null,
+     "unit_price_usd": "0.0085"
+    }
+   ],
+   "currency": "USD",
+   "total_usd": "0.024",
+   "pricing_version": "retail-2026-11-10-v2"
+  },
+  "usage": {
+   "lines": [
+    {
+     "part": "parse",
+     "quantity": 2,
+     "unit": "page",
+     "credits_per_unit": 1,
+     "multiplier": 1,
+     "credits": 2,
+     "waiver": null
+    },
+    {
+     "part": "operation",
+     "quantity": 2,
+     "unit": "page",
+     "credits_per_unit": 2,
+     "multiplier": 1,
+     "credits": 4,
+     "waiver": null
+    }
+   ]
+  },
+  "created_at": "2026-11-14T20:19:00.392891Z",
+  "started_at": "2026-11-14T20:19:00.634456Z",
+  "finished_at": "2026-11-14T20:19:16.324719Z",
+  "payload_expires_at": null,
+  "deleted_at": null,
+  "timing": {
+   "received_at": "2026-11-14T20:18:59.958Z",
+   "observed_at": "2026-11-14T20:19:16.596Z",
+   "completed_at": "2026-11-14T20:19:16.591Z",
+   "elapsed_ms": 16633,
+   "total_ms": 16633,
+   "first_response_ms": 16633,
+   "breakdown": {
+    "preparation_ms": 434,
+    "queue_ms": 242,
+    "ndi_processing_ms": 15690,
+    "result_preparation_ms": 267,
+    "delivery_wait_ms": 0,
+    "document_finalization_ms": null
+   }
+  }
+ },
+ "ms_total": 17764
+}

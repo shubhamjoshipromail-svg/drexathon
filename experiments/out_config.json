@@ -1,0 +1,372 @@
+{
+ "ministries": [
+  {
+   "name": "Ministry of Finance",
+   "mandate": "Protects my savings and financial security.",
+   "has_veto": false,
+   "veto_scope": "",
+   "vote_weight": 2,
+   "id": "m0",
+   "short": "Finance",
+   "cite": {
+    "page": 1,
+    "quote": "1.1 Ministry of Finance. Protects my savings and financial security. Vote weight: 2. No veto."
+   }
+  },
+  {
+   "name": "Ministry of Health",
+   "mandate": "Protects my sleep, body and mental health.",
+   "has_veto": true,
+   "veto_scope": "any decision that would make me work more than 55 hours a week or sleep less than 7 hours a night",
+   "vote_weight": 1,
+   "id": "m1",
+   "short": "Health",
+   "cite": {
+    "page": 1,
+    "quote": "1.2 Ministry of Health. Protects my sleep, body and mental health.\nVote weight: 1. Holds a VETO over any decision that would make me work more than 55 hours a week or sleep less than 7 hours a night."
+   }
+  },
+  {
+   "name": "Ministry of Family",
+   "mandate": "Protects time with my partner Sam and my parents.",
+   "has_veto": true,
+   "veto_scope": "any decision that requires moving to another city",
+   "vote_weight": 1,
+   "id": "m2",
+   "short": "Family",
+   "cite": {
+    "page": 1,
+    "quote": "1.3 Ministry of Family. Protects time with my partner Sam and my parents. Vote weight: 1. Holds a VETO over any decision that requires moving to another city."
+   }
+  },
+  {
+   "name": "Ministry of Ambition",
+   "mandate": "Protects my career growth and the impact of my work.",
+   "has_veto": false,
+   "veto_scope": "",
+   "vote_weight": 2,
+   "id": "m3",
+   "short": "Ambition",
+   "cite": {
+    "page": 1,
+    "quote": "1.4 Ministry of Ambition. Protects my career growth and the impact of my work. Vote weight: 2. No veto."
+   }
+  },
+  {
+   "name": "Ministry of Adventure",
+   "mandate": "Protects curiosity, novelty and joy.",
+   "has_veto": false,
+   "veto_scope": "",
+   "vote_weight": 1,
+   "id": "m4",
+   "short": "Adventure",
+   "cite": {
+    "page": 1,
+    "quote": "1.5 Ministry of Adventure. Protects curiosity, novelty and joy. Vote weight: 1. No veto."
+   }
+  },
+  {
+   "name": "Ministry of the Future Self",
+   "mandate": "Protects who I will be in ten years: skills, health and wealth that compound.",
+   "has_veto": false,
+   "veto_scope": "",
+   "vote_weight": 1,
+   "id": "m5",
+   "short": "Future Self",
+   "cite": {
+    "page": 1,
+    "quote": "1.6 Ministry of the Future Self. Protects who I will be in ten years: skills, health and wealth that compound. Vote weight: 1. No veto."
+   }
+  }
+ ],
+ "rules": [
+  {
+   "id": "2.1",
+   "text": "My emergency fund never falls below 6 months of living expenses, which is $27,000.",
+   "applies_to": "Ministry of Finance",
+   "cite": {
+    "page": 2,
+    "quote": "Rule 2.1 (Finance). My emergency fund never falls below 6 months of living expenses, which is $27,000."
+   }
+  },
+  {
+   "id": "2.2",
+   "text": "I sleep at least 7 hours a night and I do not work more than 55 hours in a week.",
+   "applies_to": "Ministry of Health",
+   "cite": {
+    "page": 2,
+    "quote": "Rule 2.2 (Health). I sleep at least 7 hours a night and I do not work more than 55 hours in a week."
+   }
+  },
+  {
+   "id": "2.3",
+   "text": "Sundays belong to Sam and my family, and there is no work on Sundays.",
+   "applies_to": "Ministry of Family",
+   "cite": {
+    "page": 2,
+    "quote": "Rule 2.3 (Family). Sundays belong to Sam and my family. No work on Sundays."
+   }
+  },
+  {
+   "id": "2.4",
+   "text": "In my thirties I choose the job where I learn fastest, not the job that pays most.",
+   "applies_to": "Ministry of Ambition",
+   "cite": {
+    "page": 2,
+    "quote": "Rule 2.4 (Ambition). In my thirties I choose the job where I learn fastest, not the job that pays most."
+   }
+  },
+  {
+   "id": "2.5",
+   "text": "Once a year I take one bet that scares me.",
+   "applies_to": "Ministry of Adventure",
+   "cite": {
+    "page": 2,
+    "quote": "Rule 2.5 (Adventure). Once a year I take one bet that scares me."
+   }
+  },
+  {
+   "id": "2.6",
+   "text": "I never join a company with less than 12 months of runway.",
+   "applies_to": "Ministry of the Future Self",
+   "cite": {
+    "page": 2,
+    "quote": "Rule 2.6 (Future Self). I never join a company with less than 12 months of runway."
+   }
+  },
+  {
+   "id": "2.7",
+   "text": "No big decision is final until I have slept on it for 48 hours.",
+   "applies_to": "all",
+   "cite": {
+    "page": 2,
+    "quote": "Rule 2.7 (All ministries). No big decision is final until I have slept on it for 48 hours."
+   }
+  }
+ ],
+ "facts": [
+  {
+   "id": "company_address",
+   "fact": "The company is located at 1200 Congress Ave, Austin, TX 78701.",
+   "topic": "location",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "1200 Congress Ave, Austin, TX 78701 | 10 November 2026"
+   }
+  },
+  {
+   "id": "letter_date",
+   "fact": "The offer letter is dated 10 November 2026.",
+   "topic": "time",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "1200 Congress Ave, Austin, TX 78701 | 10 November 2026"
+   }
+  },
+  {
+   "id": "job_title",
+   "fact": "The offered position is Founding Engineer.",
+   "topic": "other",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "We are delighted to offer you the position of Founding Engineer at Lumen Labs, Inc."
+   }
+  },
+  {
+   "id": "base_salary",
+   "fact": "The base salary is $120,000 per year.",
+   "topic": "money",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "1. Base salary. Your base salary will be $120,000 per year, paid twice a month."
+   }
+  },
+  {
+   "id": "pay_frequency",
+   "fact": "The salary is paid twice a month.",
+   "topic": "money",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "1. Base salary. Your base salary will be $120,000 per year, paid twice a month."
+   }
+  },
+  {
+   "id": "equity_percentage",
+   "fact": "The candidate will be granted options to purchase 0.75% of the fully diluted shares.",
+   "topic": "equity",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "2. Equity. You will be granted options to purchase 0.75% of the fully diluted shares of the company, vesting over 4 years with a 1-year cliff."
+   }
+  },
+  {
+   "id": "vesting_period",
+   "fact": "The equity vests over 4 years.",
+   "topic": "equity",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "2. Equity. You will be granted options to purchase 0.75% of the fully diluted shares of the company, vesting over 4 years with a 1-year cliff."
+   }
+  },
+  {
+   "id": "vesting_cliff",
+   "fact": "The equity has a 1-year cliff.",
+   "topic": "equity",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "2. Equity. You will be granted options to purchase 0.75% of the fully diluted shares of the company, vesting over 4 years with a 1-year cliff."
+   }
+  },
+  {
+   "id": "cliff_forfeiture",
+   "fact": "If the candidate leaves before the first anniversary, no options vest.",
+   "topic": "equity",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "If you leave before your first anniversary, no options vest."
+   }
+  },
+  {
+   "id": "start_date",
+   "fact": "The start date is 4 January 2027.",
+   "topic": "time",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "3. Start date. Your start date will be 4 January 2027."
+   }
+  },
+  {
+   "id": "work_location",
+   "fact": "The role is based in the Austin, Texas office.",
+   "topic": "location",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "4. Location. This is a hybrid role based in our Austin, Texas office, in the office at least 3 days per week."
+   }
+  },
+  {
+   "id": "hybrid_schedule",
+   "fact": "The role is hybrid, requiring presence in the office at least 3 days per week.",
+   "topic": "location",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "4. Location. This is a hybrid role based in our Austin, Texas office, in the office at least 3 days per week."
+   }
+  },
+  {
+   "id": "relocation_stipend",
+   "fact": "A $10,000 relocation stipend is offered.",
+   "topic": "money",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "We offer a $10,000 relocation stipend."
+   }
+  },
+  {
+   "id": "weekly_hours",
+   "fact": "Weeks of 50 to 60 hours are common during launches.",
+   "topic": "time",
+   "doc": "offer letter",
+   "cite": {
+    "page": 1,
+    "quote": "5. Hours. We are an early-stage team. Weeks of 50 to 60 hours are common during launches."
+   }
+  },
+  {
+   "id": "seed_funding",
+   "fact": "Lumen Labs raised a $2.1M seed round in March 2026.",
+   "topic": "money",
+   "doc": "offer letter",
+   "cite": {
+    "page": 2,
+    "quote": "6. Company status. Lumen Labs raised a $2.1M seed round in March 2026."
+   }
+  },
+  {
+   "id": "monthly_burn",
+   "fact": "The current burn rate is $150,000 per month.",
+   "topic": "money",
+   "doc": "offer letter",
+   "cite": {
+    "page": 2,
+    "quote": "At our current burn of $150,000 per month we have about 14 months of runway."
+   }
+  },
+  {
+   "id": "runway",
+   "fact": "The company has about 14 months of runway.",
+   "topic": "money",
+   "doc": "offer letter",
+   "cite": {
+    "page": 2,
+    "quote": "At our current burn of $150,000 per month we have about 14 months of runway."
+   }
+  },
+  {
+   "id": "health_benefits",
+   "fact": "Health, dental and vision insurance are provided from day one.",
+   "topic": "health",
+   "doc": "offer letter",
+   "cite": {
+    "page": 2,
+    "quote": "7. Benefits. Health, dental and vision insurance from day one."
+   }
+  },
+  {
+   "id": "pto_policy",
+   "fact": "Unlimited paid time off is offered.",
+   "topic": "time",
+   "doc": "offer letter",
+   "cite": {
+    "page": 2,
+    "quote": "Unlimited paid time off."
+   }
+  },
+  {
+   "id": "offer_expiry",
+   "fact": "The offer expires on 21 November 2026.",
+   "topic": "time",
+   "doc": "offer letter",
+   "cite": {
+    "page": 2,
+    "quote": "8. Expiry. This offer expires on 21 November 2026."
+   }
+  }
+ ],
+ "passage": {
+  "special": [
+   {
+    "condition": "Any decision that risks more than $20,000 or changes my job",
+    "threshold": "two_thirds"
+   }
+  ],
+  "default_threshold": "simple"
+ },
+ "leader": {
+  "can_override_veto": true,
+  "override_requires": "a two-thirds majority of weighted votes supports the decision and the vetoing ministry's condition is written down and accepted",
+  "override_threshold": "two_thirds",
+  "override_needs_condition": true
+ },
+ "leaderCite": {
+  "page": 2,
+  "quote": "The Prime Minister may override a veto only if a two-thirds majority of weighted votes supports the decision and the vetoing ministry's condition is written down and accepted."
+ },
+ "passageCite": {
+  "page": 2,
+  "quote": "simple"
+ }
+}

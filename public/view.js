@@ -1,4 +1,4 @@
-import { readConstitution, readEvidence, buildConfig, createEngine, LEVELS } from './engine.js';
+import { readConstitution, readEvidence, readConstitutionText, readEvidenceText, readEvidenceUrl, buildConfig, createEngine, LEVELS, speakLine } from './engine.js';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -76,11 +76,27 @@ $('sample').onclick = () => {
   $('source-status').textContent = 'constitution.pdf + offer-letter.pdf selected';
   $('decision').value ||= 'Should I quit my job to join Lumen Labs as founding engineer?';
 };
-for (const id of ['constitution','evidence']) $(id).onchange = () => {
+fetch('/samples/constitution-template.txt').then(r => r.ok ? r.text() : '').then(t => { if (!$('const-text').value) $('const-text').value = t; });
+for (const id of ['constitution','evidence','const-text','ev-urls','ev-text']) $(id).oninput = $(id).onchange = () => {
   samples = false;
   $('source-status').textContent = '';
 };
 
+// job = { name, run: () => engine read call }
+async function readJob({ name, run }) {
+  const line = document.createElement('div');
+  $('progress').append(line);
+  const start = performance.now();
+  const tick = () => { line.textContent = 'NDI reading '+name+'… '+Math.floor((performance.now()-start)/1000)+' s'; };
+  tick(); const timer = setInterval(tick, 250);
+  try {
+    const parsed = await run();
+    if (!parsed.result?.data) throw new Error('NDI returned no structured extraction for '+name);
+    line.textContent = 'NDI read '+name+' · '+(parsed.ms/1000).toFixed(1)+' s';
+    return { ...parsed, doc: name };
+  } catch (error) { line.textContent = name+' · '+error.message; throw error; }
+  finally { clearInterval(timer); }
+}
 async function readDoc(name, source, read) {
   const line = document.createElement('div');
   $('progress').append(line);
@@ -110,8 +126,15 @@ $('convene').onsubmit = async event => {
   if (!decision) return;
   const constitution = samples ? '/samples/constitution.pdf' : $('constitution').files[0];
   const evidence = samples ? ['/samples/offer-letter.pdf'] : [...$('evidence').files];
-  if (!constitution || !evidence.length) return showError('Choose a constitution and at least one evidence PDF, or use the samples.');
+  const constText = $('const-text').value.trim();
+  if (!constitution && !constText) return showError('Write your constitution in the box, upload a constitution PDF, or use the example.');
   const name = source => typeof source === 'string' ? source.split('/').at(-1) : source.name;
+  // Extra evidence the user typed: links (NDI reads the page) and pasted text (rendered to PDF, NDI reads it).
+  const extraJobs = samples ? [] : [
+    ...$('ev-urls').value.split(/\s+/).filter(u => /^https?:\/\//.test(u)).map(u => ({ name: u.replace(/^https?:\/\//,'').slice(0,60), run: () => readEvidenceUrl('', u) })),
+    ...($('ev-text').value.trim() ? [{ name: 'pasted evidence', run: () => readEvidenceText('', $('ev-text').value.trim(), 'pasted-evidence.pdf') }] : [])];
+  const constJob = constitution ? { name: name(constitution), run: () => readDoc(name(constitution),constitution,readConstitution) }
+    : { name: 'my constitution (written here)', run: () => readConstitutionText('', constText) };
   const inputs = [...$('convene').querySelectorAll('button,input,textarea')];
   for (const input of inputs) input.disabled = true;
   busy = true;
@@ -120,8 +143,9 @@ $('convene').onsubmit = async event => {
   $('errors').hidden = true;
   try {
     const results = await Promise.allSettled([
-      readDoc(name(constitution),constitution,readConstitution),
-      ...evidence.map(async doc => ({ ...(await readDoc(name(doc),doc,readEvidence)),doc:name(doc) }))
+      constitution ? readDoc(name(constitution),constitution,readConstitution) : readJob(constJob),
+      ...evidence.map(async doc => ({ ...(await readDoc(name(doc),doc,readEvidence)),doc:name(doc) })),
+      ...extraJobs.map(readJob)
     ]);
     const failed = results.find(result => result.status === 'rejected');
     if (failed) throw failed.reason;
@@ -199,7 +223,9 @@ function card(m) {
     (m.lastCite ? '<button class="chip" data-cite="'+esc(m.id)+'">'+citeLabel(m.lastCite)+'</button>' : '')+
     (m.condition ? '<p class="ticket">'+esc(m.condition)+'</p>' : '')+
     (ally ? '<p class="ally">⟷ '+esc(ally.short)+'</p>' : '')+
-    (interruption ? '<div class="speech">'+esc(liveSpeech.line)+'<br><small>Words by LLM · position, citation and condition by Drex</small></div>' : '')+'</article>';
+    (interruption ? '<div class="speech">'+(liveSpeech.kind==='question'?'<b>Question to the Consul:</b> ':'')+esc(liveSpeech.line)+'<br><small>'+(liveSpeech.kind==='question'
+      ? 'Question drafted by LLM from your documents at setup · Drex chose to ask it now ('+pct(liveSpeech.p)+') · answer it out loud'
+      : 'Words by LLM · position, citation and condition by Drex')+' · voice: ElevenLabs</small></div>' : '')+'</article>';
 }
 
 function playSpeech(event) {
@@ -207,21 +233,19 @@ function playSpeech(event) {
   liveSpeech = event;
   clearTimeout(speechTimer);
   renderChamber();
-  speechTimer = setTimeout(() => { liveSpeech = null; renderChamber(); },6000);
-  if (!event.line || !('speechSynthesis' in window)) return;
-  const index = state().ministers.findIndex(m => m.id===event.minister || m.short===event.short);
-  const line = new SpeechSynthesisUtterance(event.line);
-  const voices = speechSynthesis.getVoices().filter(voice => /^en/i.test(voice.lang));
-  if (voices.length) line.voice = voices[Math.max(index,0)%voices.length];
-  line.pitch = .83+Math.max(index,0)%8*.09;
-  line.rate = 1.03;
-  line.onerror = e => {
-    if (!['canceled','interrupted'].includes(e.error)) showError('Speech playback: '+e.error);
-  };
-  speechSynthesis.cancel();
-  speechSynthesis.speak(line);
+  const hold = event.kind === 'question' ? 15000 : 8000;
+  speechTimer = setTimeout(() => { liveSpeech = null; renderChamber(); },hold);
+  if (!event.line) return;
+  // Live ElevenLabs voice for this senator; errors are shown, never replaced by another voice.
+  speakLine('',event.line,event.voice).catch(showError);
 }
 
+// Continuous seat colour: interpolate between the 5 stance colours so small Drex differences stay visible.
+const hex = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16));
+function blend(v) {
+  const x = Math.max(0,Math.min(4,v)), i = Math.min(3,Math.floor(x)), f = x-i, a = hex(stanceColors[i]), b = hex(stanceColors[i+1]);
+  return 'rgb('+a.map((c,k)=>Math.round(c+(b[k]-c)*f)).join(',')+')';
+}
 const canvas = $('seats');
 canvas.tabIndex = 0;
 function drawSeats() {
@@ -259,7 +283,7 @@ function drawSeats() {
     const pulse = flashes.has(member.id) ? Math.max(0,1-(now-flashes.get(member.id))/670) : 0;
     if (!pulse) flashes.delete(member.id);
     const r = radius+2*pulse;
-    ctx.fillStyle = stanceColors[Math.max(0,Math.min(4,Math.round(member.support)))];
+    ctx.fillStyle = blend(member.support);
     ctx.strokeStyle = (document.activeElement === canvas && i === seatFocus) || pulse>.4 ? '#fff2bd' : color(minister(member.ministry));
     ctx.beginPath();
     ctx.roundRect(x-r,y-r*.65,r*2,r*1.3,2);
